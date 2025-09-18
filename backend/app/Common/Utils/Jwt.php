@@ -1,0 +1,2 @@
+<?php
+// JWT encode/decode
