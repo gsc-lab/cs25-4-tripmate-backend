@@ -1,9 +1,11 @@
 # docker/php/Dockerfile
-
 FROM php:8.2-fpm
 
-# mysqli 확장 설치
-RUN docker-php-ext-install mysqli
+# 시스템 패키지: unzip, git, libzip-dev
+RUN apt-get update \
+ && apt-get install -y git unzip libzip-dev \
+ && docker-php-ext-install mysqli zip \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY . /var/www/html/
 
