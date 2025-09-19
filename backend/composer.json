@@ -1,0 +1,13 @@
+{
+    "name": "tripmate/backend",
+    "description": "TripMate backend API for managing trips",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Tripmate\\Backend\\": "app/"
+        }
+    },
+    "require": {
+        "respect/validation": "^2.2"
+    }
+}
