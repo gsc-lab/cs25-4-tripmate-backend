@@ -1,0 +1,2 @@
+<?php
+// APP_NAME, APP_ENV, APP_DEBUG
