@@ -7,6 +7,7 @@
         }
     },
     "require": {
-        "respect/validation": "^2.2"
+        "respect/validation": "^2.2",
+        "altorouter/altorouter": "^2.0"
     }
 }
