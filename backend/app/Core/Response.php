@@ -8,7 +8,7 @@ class Response
     // status = 200 
     public function success(array $data =[], int $status = 200): void
     {
-      self::json([
+      $this->json([
         'success' => true,
         'data'=> $data
       ], $status);
@@ -17,7 +17,7 @@ class Response
     // status = 400
     // error => code, message 포함
     public function error(string $code, string $message, int $status = 400) {
-      self::json([
+      $this->json([
         'success' => false,
         'error' => [
           'code' => $code,
