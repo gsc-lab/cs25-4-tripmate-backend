@@ -17,8 +17,12 @@ $router = new AltoRouter();
 //  2-1. 각 모듈의 app/Modules/*/Routes.php 는 
 //  "function (AltoRouter $router, Request $request, Response $response): void" 를 반환해야 함
 foreach (glob(__DIR__ . '/../app/Modules/*/Routes.php') as $routeFile) {
- $register = require $routeFile; 
- $register($router, $request, $response);
+    $register = require $routeFile;
+    if (!is_callable($register)) {
+        error_log("Routes.php must return a callable: {$routeFile}");
+        continue; // 콜러블 아닌 파일은 스킵
+    }
+    $register($router, $request, $response);
 }
 
 // 3. 실행 하기 없으면 error 404 발생
@@ -32,4 +36,3 @@ if ($match && is_callable($match['target'])) {
 else {
   $response->error('NOT_FOUND', 'Route not found', 404);
 }
-?>
