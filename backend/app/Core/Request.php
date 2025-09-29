@@ -27,8 +27,18 @@ class Request {
     $this->query = $_GET ?? [];
 
     // 3. 모든 HTTP 요청 헤더 가져오기
-    $rawHeaders = getallheaders() ?: [];
-
+    $rawHeaders = [];
+    foreach ($_SERVER as $k => $v) {
+      if (strpos($k, 'HTTP_') === 0) {
+        $name = strtolower(str_replace('_', '-', substr($k, 5)));
+        $rawHeaders[$name] = $v;
+      } elseif (in_array($k, ['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_ENCODING'], true)) {
+        $name = strtolower(str_replace('_', '-', $k));
+        $rawHeaders[$name] = $v;
+      }
+    }
+    $this->headers = $rawHeaders;
+    
     // 4. 소문자로 변환하기
     $lower = [];
     // 4-1 : 3번에서 가져온 헤더를 소문자로 변환 ()
@@ -63,4 +73,3 @@ class Request {
   }
 
 
-?>
