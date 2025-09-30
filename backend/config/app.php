@@ -8,7 +8,7 @@
     define('APP_ENV', 'development');
 
     // 디버그 모드(debug mode)
-    define('APP_DEBUG', true) // true-상세한 오류/ false-실 서비스
+    define('APP_DEBUG', true); // true-상세한 오류/ false-실 서비스
 
     if (APP_DEBUG) {
         // 디버그 모드가 true이면 모든 에러를 화면에 표시
