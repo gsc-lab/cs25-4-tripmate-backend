@@ -25,7 +25,6 @@ logs/
 docker-compose.override.yml
 *.pid
 *.seed
-*.sql
 /data/
 /db_data/
 /mysql_data/
