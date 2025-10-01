@@ -82,5 +82,34 @@ class TripsRepository {
         return $id;
     }
 
+    // 2. trip id로 여행 조회 
+    // 조회 성공시 배열 반환, 실패시(존재하지 않을 경우) null 반환
+    public function findTripById(int $tripId): array|null {
+        // 2-1. SQL 작성
+        $sql = "SELECT id, user_id, region_id, title, start_date, end_date, created_at, updated_at
+                FROM Trip
+                WHERE id = :trip_id
+                LIMIT 1";
+        // 2-2. 쿼리 준비
+        $stmt = $this->pdo->prepare($sql);
+        // 쿼리 준비 실패 시 null 반환
+        if ($stmt === false) {
+          return null;
+        }
+        // 2-3. 쿼리 실행
+        $success = $stmt->execute([':trip_id' => $tripId]);
+        // 2-4. 실패 시 null 반환
+        if ($success === false) {
+          return null;
+        }
 
+        // 2-5. 결과 가져오기
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        // 2-6. 결과가 없으면 null 반환
+        if ($row === false) {
+          return null;
+        }
+        return $row;
+    } 
+    
 }
