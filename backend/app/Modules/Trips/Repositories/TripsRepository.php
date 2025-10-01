@@ -116,7 +116,7 @@ class TripsRepository {
     public function insertTripDay(
         int $tripId,
         int $dayNo,
-        string $memo = null
+        string $memo = ''
     ): bool {
         // 3-1. SQL 작성
         $sql = "
