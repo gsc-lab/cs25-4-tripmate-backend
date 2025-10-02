@@ -35,7 +35,7 @@ class TripsController extends Controller {
         return $this->response->error('VALIDATION_ERROR', $validationResult, 422);
     }
 
-    // 4-3. 임시: 로그인 미구현 상태 → userId를 1로 고정
+    // 4-3. 임시: 로그인 미구현 상태 -> userId를 1로 고정
     $userId = 1;
 
     // 4-4. TripsService의 createTrip 호출
