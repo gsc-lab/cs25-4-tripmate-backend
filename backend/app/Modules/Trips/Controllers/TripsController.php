@@ -26,34 +26,38 @@ class TripsController extends Controller {
   // 4. 여행 생성 : POST /api/v1/trips
   // 4-1. createTrip 메서드 정의
   public function createTrip() {
-    // 4-2. 요청 데이터 가져오기 (값이 없는 경우 빈 배열로 초기화)
+    // 4-1. 요청 데이터 가져오기
     $body = $this->request->body ?? [];
 
-    // 4-3. 유효성 검증을 위한 validator 사용
-    $varidationResult = $this->validator->ValidationTrip($body);
-    
-    if ($varidationResult !== true) {
-      return $this->response->error('VALIDATION_ERROR', $varidationResult, 422);
+    // 4-2. 유효성 검증
+    $validationResult = $this->validator->ValidationTrip($body);
+    if ($validationResult !== true) {
+        return $this->response->error('VALIDATION_ERROR', $validationResult, 422);
     }
 
-    // 4-4. TripsService의 createTrip 메서드 호출
-    $trip = $this->tripsService->createTrip(
-            $body['title'],
-            (int)$body['region_id'], // (int)로 형변환
-            $body['start_date'],
-            $body['end_date'],
-          );
+    // 4-3. 임시: 로그인 미구현 상태 -> userId를 1로 고정
+    $userId = 1;
 
-    // 4-5. 실패 시 응답 반환
-    if ($trip === false) {
-      $this->response->error('CREATION_FAILED', '여행 생성에 실패했습니다.', 500);
-      return;
+    // 4-4. TripsService의 createTrip 호출
+    $tripId = $this->tripsService->createTrip(
+        (int)$userId,
+        (int)$body['region_id'],
+        $body['title'],
+        $body['start_date'],
+        $body['end_date']
+    );
+
+    // 4-5. 실패 시 응답
+    if ($tripId === false) {
+        return $this->response->error('CREATION_FAILED', '여행 생성에 실패했습니다.', 500);
     }
-    
-   // 4-6. 성공 시 응답 반환
-    $this->response->success($trip, 201);
-    
-  }
+
+    // 4-6. 성공 시 응답 (생성된 trip_id 반환)
+    return $this->response->success(
+        ['trip_id' => $tripId],
+        201
+    );
+}
 
   // 5. 여행 목록 조회 : GET /api/v1/trips -> 페이지네이션 적용
   // 5-1. getTrips 메서드 정의 

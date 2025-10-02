@@ -18,4 +18,14 @@ class Date
         // 실제로 존재하는 날짜인지 체크
         return checkdate((int)$m, (int)$d, (int)$y);
     }
+
+    // 시작일과 종료일을 포함한 일수 계산 메서드
+    public static function calcInclusiveDays(string $startYmd, string $endYmd): int{
+      // 날짜 형식이 올바르지 않으면 0 반환
+      $s = strtotime($startYmd . ' 00:00:00');
+      $e = strtotime($endYmd   . ' 00:00:00');
+      if ($s === false || $e === false) return 0;
+      // 일수 계산 (시작일과 종료일을 포함하므로 +1)
+      return (int) floor(($e - $s) / 86400) + 1;
+    }
 }

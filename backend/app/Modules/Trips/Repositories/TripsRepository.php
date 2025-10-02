@@ -113,38 +113,27 @@ class TripsRepository {
     } 
 
     // 3. tripday 생성 메서드 (성공시 true, 실패시 false 반환)
-    // withDate가 true면 date 컬럼이 있음
-    public function insertTripDay(int $tripId, int $dayNo, string $date, bool $withDate = true): bool {
-      // 3-1. SQL 작성
-      if ($withDate) {
-        $sql = "INSERT INTO TripDay (trip_id, day_no, date, created_at, updated_at)
-                VALUES (:trip_id, :day_no, :date, NOW(), NOW())";
-      } else {
-        $sql = "INSERT INTO TripDay (trip_id, day_no, created_at, updated_at)
-                VALUES (:trip_id, :day_no, NOW(), NOW())";
-      }
-      // 3-2. 쿼리 준비
-      $stmt = $this->pdo->prepare($sql);
-      // 쿼리 준비 실패 시 false 반환
-      if ($stmt === false) {
-        return false;
-      }
-      // 3-3. 쿼리 실행
-      if ($withDate) {
-        $success = $stmt->execute([
-          ':trip_id' => $tripId,
-          ':day_no' => $dayNo,
-          ':date' => $date,
-        ]);
-      } else {
-        $success = $stmt->execute([
-          ':trip_id' => $tripId,
-          ':day_no' => $dayNo,
-        ]);
-      }
-      
-      // 3-4. 성공 여부 반환
-      return $success !== false;
+    public function insertTripDay(
+        int $tripId,
+        int $dayNo,
+        string $memo = ''
+    ): bool {
+        // 3-1. SQL 작성
+        $sql = "
+            INSERT INTO TripDay (trip_id, day_no, memo, created_at, updated_at)
+            VALUES (:trip_id, :day_no, :memo, NOW(), NOW())
+        ";
+        // 3-2. 쿼리 준비
+        $stmt = $this->pdo->prepare($sql);
+        // 쿼리 준비 실패 시 false 반환
+        if ($stmt === false) {
+            return false;
+        }
+        // 3-3. 쿼리 실행
+        return $stmt->execute([
+            ':trip_id' => $tripId,
+            ':day_no'  => $dayNo,
+            ':memo'    => $memo,
+        ]) !== false; // 3-4. 성공시 true, 실패시 false 반환
     }
-    
 }
