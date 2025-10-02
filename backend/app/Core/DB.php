@@ -20,7 +20,7 @@ class DB {
   
   // 3. PDD 연결 시도 (에러는 임시로 간단하게 처리)
   $pdo = new PDO($dsn, $user, $pass);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
 
   return $pdo;
 }
