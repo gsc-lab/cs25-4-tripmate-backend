@@ -9,7 +9,7 @@ use Tripmate\Backend\Core\Validator;
 
 // 1. TripController 클래스 정의
 class TripsController extends Controller {
-  // 2. 프러퍼티 정의 (services 메서드 구현 예정)
+  // 2. 프러퍼티 정의
   public TripsService $tripsService;
   public Validator $validator;
 
@@ -57,6 +57,8 @@ class TripsController extends Controller {
         ['trip_id' => $tripId],
         201
     );
+
+
 }
 
   // 5. 여행 목록 조회 : GET /api/v1/trips -> 페이지네이션 적용
