@@ -48,6 +48,15 @@ class TripsService {
       return false;
     }
 
+    // 5-7. 여행 일자 수 만큼 tripdays 생성
+    for ($dayNo = 1; $dayNo <= $dayCount; $dayNo++) {
+      // 실패 시 롤백 후 false 반환
+      if (!$this->tripsRepository->insertTripDay($tripId, $dayNo)) {
+        $this->tripsRepository->rollBack();
+        return false;
+      }
+    }
+
     // 5-8. 커밋이 실패하면 롤백 후 false 반환
     if (!$this->tripsRepository->commit()) {
       $this->tripsRepository->rollBack();
