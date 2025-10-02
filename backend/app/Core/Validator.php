@@ -139,7 +139,7 @@
 
         /**  @param  */
         public function ValidationDay(array $date) {
-            // 일정 아이템 검증
+            // 일정 아이템 id 검증
             $validation = v::key('item_id', v::notEmpty()->intVal(), true);
 
             return $this->ErrorCheck($validation, $date);
@@ -147,6 +147,7 @@
 
         /**  @param  */
         public function ValidationplaceId(array $date) {
+            // 장소 id 검증
             $validation = v::key('place_id', v::notEmpty()->intVal(), true);
 
             return $this->ErrorCheck($validation, $date);
@@ -154,6 +155,7 @@
         
         /**  @param  */
         public function ValidationDayId(array $date) {
+            // 일차 id 검증
             $validation = v::key('day_no', v::notEmpty()->intVal(), true);
 
             return $this->ErrorCheck($validation, $date);
@@ -161,6 +163,7 @@
 
         /**  @param  */
         public function ValidationTripId(array $date) {
+            // 여행 생성 id
             $validation = v::key('trip_id', v::notEmpty()->intVal(), true);
 
             return $this->ErrorCheck($validation, $date);
@@ -177,6 +180,7 @@
 
         /**  @param 쿼리*/
         public function ValidationRegionSearch(array $date) {
+            // 지역 이름 검증
             $validation = v::key('query', v::notEmpty()->stringType(), true);
 
             return $this->ErrorCheck($validation, $date);
