@@ -5,13 +5,14 @@
     use Firebase\JWT\Key;
     use Firebase\JWT\ExpiredException;
     use Firebase\JWT\SignatureInvalidException;
+    use Tripmate\Backend\Core\Response;
 
     // JWT 발급 및 검증
     class Jwt {
         // JWT 발급
         public static function encode($user_id) {
-        // 시크릿 키 설정
-        $secret_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30';
+            // 시크릿 키 설정
+            $secret_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30';
 
             // 페이로드 정의
             $payload = [
@@ -30,6 +31,8 @@
 
         // JWT 검증
         public static function decode($jwt) {
+            $response = new Response();
+
             // 시크릿 키 설정
             $secret_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30';
 
@@ -38,13 +41,12 @@
                 $decode = JJWT::decode($jwt, new Key($secret_key, 'HS256'));
             } catch (SignatureInvalidException $e) {
                 // 서명 검증 실패 처리
-                return false;
+                $response->error("TOKEN_SIGNATURE_INVALID", "토큰 서명이 유효하지 않습니다.", 403);
+                exit;
             } catch (ExpiredException $e) {
                 // 토큰 만료 처리
-                return false;
-            }catch (Exception $e) {
-                // 에러 발생 
-                return false;
+                $response->error("TOKEN_EXPIRED", "토큰이 만료되었습니다. 다시 로그인해주세요.", 401);
+                exit;
             }
         
             // 유저 아이디 확인
@@ -52,7 +54,8 @@
 
             // id 없을 시
             if (!$user_id) {
-                return false;
+                $response->error("TOKEN_UNKNOWN_ERROR", "토큰 처리 중 알 수 없는 오류가 발생했습니다.", 500);
+                exit;
             }
             
             return $user_id;
