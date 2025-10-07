@@ -25,7 +25,7 @@ return function(\AltoRouter $router, Request $request, Response $response) {
   $router->map(
     'GET',
     '/api/v1/trips/[i:trip_id]',
-    [new TripsController($request, $response), 'OneTrip']
+    [new TripsController($request, $response), 'showTrip']
   );
   // 2-4. 여행 수정 : PUT /api/v1/trips/{trip_id}
   $router->map(
