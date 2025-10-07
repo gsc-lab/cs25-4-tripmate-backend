@@ -68,5 +68,20 @@ class TripsService {
    
   }
 
-  
+  // 6. trip_id로 여행 단건 조회 메서드
+  public function findTripById(int $tripId): array|false {
+   // 6-1. tripId가 0 이하이면 false 반환
+    if ($tripId <= 0) {
+      return false;
+    }
+   // 6-2. TripsRepository의 findTripById 메서드 호출
+   $trip = $this->tripsRepository->findTripById($tripId);
+   // 6-3. 조회 실패 시 false 반환
+    if ($trip === null) {
+      return false;
+    }
+   // 6-4. 조회 성공 시 여행 정보 배열 반환
+    return $trip;
+  }
+
 }
