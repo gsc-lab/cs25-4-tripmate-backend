@@ -71,7 +71,23 @@ class TripsController extends Controller {
 
   // 6. 여행 단건 조회 : GET /api/v1/trips/{trip_id}
   // 6-1. OneTrip 메서드 정의
-  public function OneTrip() {}
+  public function OneTrip() {
+    // 6-2. 경로 매개변수에서 trip_id 가져오기
+    $tripId = $this->request->params['trip_id'] ?? null;
+    // 6-3. trip_id가 없으면 400 응답
+    if ($tripId == 0 || !is_numeric($tripId) || $tripId <= 0) {
+      return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
+    }
+    // 6-4. TripsService의 findTripById 호출
+    $trip = $this->tripsService->findTripById((int)$tripId);
+
+    // 6-5. 조회 실패 시 404 응답
+    if ($trip === false) {
+      return $this->response->error('NOT_FOUND', '해당 trip_id의 여행을 찾을 수 없습니다.', 404);
+    }
+    // 6-6. 성공 시 여행 데이터 반환
+    return $this->response->success($trip, 200);
+  }
 
   // 7. 여행 수정 : PUT /api/v1/trips/{trip_id}
   // 7-1. updateTrip 메서드 정의
