@@ -86,9 +86,9 @@ class TripsRepository {
     // 조회 성공시 배열 반환, 실패시(존재하지 않을 경우) null 반환
     public function findTripById(int $tripId): array|null {
         // 2-1. SQL 작성
-        $sql = "SELECT id, user_id, region_id, title, start_date, end_date, created_at, updated_at
+        $sql = "SELECT trip_id, user_id, region_id, title, start_date, end_date, created_at, updated_at
                 FROM Trip
-                WHERE id = :trip_id
+                WHERE trip_id = :trip_id
                 LIMIT 1";
         // 2-2. 쿼리 준비
         $stmt = $this->pdo->prepare($sql);
