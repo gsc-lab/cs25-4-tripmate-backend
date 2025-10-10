@@ -131,8 +131,8 @@ class TripsService {
       return false;
     }
 
-    // 8-8. 기존 TripDay 전부 삭제 (deleteTripDay 호출)
-    if (!$this->tripsRepository->deleteTripDay($userId , $tripId)) {
+    // 8-8. 기존 TripDay 전부 삭제 (deleteTripDaysByTripId 호출)
+    if (!$this->tripsRepository->deleteTripDaysByTripId( $tripId)) {
       // 8-9. 삭제 실패 시 롤백 후 false 반환
       $this->tripsRepository->rollBack();
       return false;
@@ -161,5 +161,7 @@ class TripsService {
 
     // 8-13. 모든 작업이 성공하면 true 반환
     return true;
-} 
+  } 
+
+  // 9. 여행 삭제 메서드
 }
