@@ -136,4 +136,46 @@ class TripsRepository {
             ':memo'    => $memo,
         ]) !== false; // 3-4. 성공시 true, 실패시 false 반환
     }
-}
+
+    // 4. tripId로 trip 목록 조회 (성공시 배열, 실패시 null 반환)
+    public function findTripsByUserId(int $userId, int $limit, int $offset): array|null {
+      // 4-1. limit와 offset을 정수로 변환
+      $limit = (int)$limit;
+      $offset = (int)$offset;
+      
+      // 4-2. limit와 offset이 음수일 경우 0으로 설정
+      if ($limit < 0) $limit = 0;
+      if ($offset < 0) $offset = 0;
+
+      // 4-3. SQL 작성
+      $sql = "
+        SELECT t.trip_id, t.user_id, t.region_id, t.title, t.start_date, t.end_date, t.created_at, t.updated_at,
+        r.name AS region_name
+        FROM Trip AS t
+        LEFT JOIN Region AS r ON t.region_id = r.region_id
+        WHERE t.user_id = :user_id
+        ORDER BY t.created_at DESC
+        LIMIT $limit OFFSET $offset
+      ";
+      // 4-4. 쿼리 준비
+      $stmt = $this->pdo->prepare($sql);
+      // 4-5. 쿼리 준비 실패 시 null 반환
+      if ($stmt === false) {
+        return null;
+      }
+      // 4-6. 쿼리 실행
+      $success = $stmt->execute([':user_id' => $userId]);
+      // 4-7. 실패 시 null 반환
+      if ($success === false) {
+        return null;
+      }
+
+      // 4-8. 결과 가져오기
+      $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      // 4-9. 결과가 없으면 null 반환
+      return $rows ? $rows : null;
+
+
+    }
+
+  }
