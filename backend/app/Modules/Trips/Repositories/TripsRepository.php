@@ -240,8 +240,8 @@ class TripsRepository {
       
     }
 
-    // 6. TripDay 삭제 메서드
-    public function deleteTripDay(int $userId, int $tripId) : bool {
+    // 6. Trip 삭제 메서드
+    public function deleteTrip(int $userId, int $tripId) : bool {
       // 6-1. SQL 작성
       $sql = "
         DELETE FROM Trip
@@ -257,6 +257,25 @@ class TripsRepository {
       return $stmt->execute([
         ':trip_id' => $tripId,
         ':user_id' => $userId,
+      ]) !== false; // 실패시 false 반환
+    }
+
+    // 7. TripDay 삭제 메서드 (특정 tripId에 해당하는 TripDay 모두 삭제)
+    public function deleteTripDaysByTripId(int $tripId) : bool {
+      // 7-1. SQL 작성
+      $sql = "
+        DELETE FROM TripDay
+        WHERE trip_id = :trip_id
+      ";
+      // 7-2. 쿼리 준비
+      $stmt = $this->pdo->prepare($sql);
+      // 쿼리 준비 실패 시 false 반환
+      if ($stmt === false) {
+        return false;
+      }
+      // 7-3. 쿼리 실행 및 성공 여부 반환
+      return $stmt->execute([
+        ':trip_id' => $tripId,
       ]) !== false; // 실패시 false 반환
     }
 
