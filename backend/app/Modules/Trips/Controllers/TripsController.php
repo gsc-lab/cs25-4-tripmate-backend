@@ -57,15 +57,40 @@ class TripsController extends Controller {
         ['trip_id' => $tripId],
         201
     );
-
-
-}
+  }
 
   // 5. 여행 목록 조회 : GET /api/v1/trips -> 페이지네이션 적용
   // 5-1. getTrips 메서드 정의 
   public function getTrips() {
-    // 5-2 페이지와 페이지당 항목 수 가져오기
-    $q = $this->request->query ?? [];
+    // 5-1. 요청 쿼리 가져오기
+    $query = $this->request->query ?? [];
+
+    // 5-2. 페이지네이션 기본값 설정
+    $page = isset($query['page']) && ctype_digit($query['page']) && (int)$query['page'] > 0 ? (int)$query['page'] : 1;
+    $perPage = isset($query['per_page']) && ctype_digit($query['per_page']) && (int)$query['per_page'] > 0 ? (int)$query['per_page'] : 20;
+
+    // 5-3. 임시: 로그인 미구현 상태 -> userId를 1로 고정
+    $userId = 1;
+
+    // 5-4. TripsService의 findTrips 호출
+    $trips = $this->tripsService->findTrips($userId, $page, $perPage);
+
+    // 5-5. 실패 시 응답
+    if ($trips === false) {
+        return $this->response->error('RETRIEVAL_FAILED', '여행 목록 조회에 실패했습니다.', 500);
+    }
+
+    // 5-6. 성공 시 응답 (여행 목록 및 페이지네이션 정보 반환)
+    return $this->response->success([
+        'data' => $trips['items'],
+        'pagination' => [
+            'page' =>  $trips['page'],
+            'per_page' => $trips['per_page'],
+            'total' => $trips['total'], 
+            'total_pages' => $trips['total_pages'],
+        ],
+      ], 200);
+    
    
   }
 
