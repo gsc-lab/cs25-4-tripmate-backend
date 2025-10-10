@@ -203,4 +203,42 @@ class TripsRepository {
       ];
     }
 
+    // 5. 여행 수정 메서드 
+    public function updateTrips(
+      int $userId,
+      int $tripId,
+      int $regionId,
+      string $title,
+      string $startDate,
+      string $endDate
+    ) : bool {
+      // 5-1. SQL 작성
+      $sql = "
+        UPDATE Trip
+        SET region_id = :region_id,
+            title = :title,
+            start_date = :start_date,
+            end_date = :end_date,
+            updated_at = NOW()
+        WHERE trip_id = :trip_id AND user_id = :user_id
+      ";
+      // 5-2. 쿼리 준비
+      $stmt = $this->pdo->prepare($sql);
+      // 쿼리 준비 실패 시 false 반환
+      if ($stmt === false) {
+        return false;
+      }
+      // 5-3. 쿼리 실행 및 성공 여부 반환
+      return $stmt->execute([
+        ':region_id' => $regionId,
+        ':title' => $title,
+        ':start_date' => $startDate,
+        ':end_date' => $endDate,
+        ':trip_id' => $tripId,
+        ':user_id' => $userId,
+      ]) !== false; // 실패시 false 반환
+      
+    
+    }
+
   }
