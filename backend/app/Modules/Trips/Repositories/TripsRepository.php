@@ -138,16 +138,36 @@ class TripsRepository {
     }
 
     // 4. tripId로 trip 목록 조회 (성공시 배열, 실패시 null 반환)
-    public function findTripsByUserId(int $userId, int $page, int $size): array|null {
+    public function findTripsByUserId(int $userId, int $page, int $size): array {
       // 4-1. page와 size을 정수로 변환
       $page = (int)$page;
       $size = (int)$size;
       
-      // 4-2. page와 size이 음수일 경우 0으로 설정
-      if ($page < 0) $page = 0;
-      if ($size < 0) $size = 0;
+      // 4-2. 음수 방지 
+      if ($page <= 0) $page = 1; // 페이지는 1부터 시작
+      if ($size <= 0) $size = 20; // 기본 크기는 20
 
-      // 4-3. SQL 작성
+      // 4-3 offset 계산
+      $offset = ($page - 1) * $size;
+
+      // 4-4. 총 페이지 수 계산
+      $sqlCount = "SELECT COUNT(*) FROM Trip WHERE user_id = :user_id";
+      $stmtCount = $this->pdo->prepare($sqlCount);
+      // 4-5. 쿼리 준비 실패 시 빈 배열 반환
+      if ($stmtCount === false) {
+         return [
+          'items' => [],
+          'total' => 0,
+          'page' => $page,
+          'per_page' => $size,
+          'total_pages' => 0,
+        ];
+      }
+
+      $okCount = $stmtCount->execute([':user_id' => $userId]);
+      $total = $okCount ? (int)$stmtCount->fetchColumn() : 0;
+
+      // 4-6. SQL 작성
       $sql = "
         SELECT t.trip_id, t.user_id, t.region_id, t.title, t.start_date, t.end_date, t.created_at, t.updated_at,
         r.name AS region_name
@@ -155,27 +175,32 @@ class TripsRepository {
         LEFT JOIN Region AS r ON t.region_id = r.region_id
         WHERE t.user_id = :user_id
         ORDER BY t.created_at DESC
-        page $page size $size
+        LIMIT {$size} OFFSET {$offset}
       ";
       // 4-4. 쿼리 준비
       $stmt = $this->pdo->prepare($sql);
-      // 4-5. 쿼리 준비 실패 시 null 반환
+      // 4-5. 쿼리 준비 실패 시 빈 배열 반환
       if ($stmt === false) {
-        return null;
+        return [
+        'items' => [],
+        'total' => $total,
+        'page' => $page,
+        'per_page' => $size,
+        'total_pages' => (int)ceil($total / max($size, 1)),
+      ];
       }
       // 4-6. 쿼리 실행
-      $success = $stmt->execute([':user_id' => $userId]);
-      // 4-7. 실패 시 null 반환
-      if ($success === false) {
-        return null;
-      }
-
-      // 4-8. 결과 가져오기
-      $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-      // 4-9. 결과가 없으면 null 반환
-      return $rows ? $rows : null;
-
-
+      $ok = $stmt->execute([':user_id' => $userId]);
+      $rows = $ok ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+      
+      // 4-7. 페이지네이션 정보 반환
+      return [
+        'items' => $rows,
+        'total' => $total,
+        'page' => $page,
+        'per_page' => $size,
+        'total_pages' => (int)ceil($total / max($size, 1)), // size가 0일 때 나누기 방지
+      ];
     }
 
   }
