@@ -89,7 +89,7 @@ class TripsRepository {
         $sql = "SELECT trip_id, user_id, region_id, title, start_date, end_date, created_at, updated_at
                 FROM Trip
                 WHERE trip_id = :trip_id
-                LIMIT 1";
+                page 1";
         // 2-2. 쿼리 준비
         $stmt = $this->pdo->prepare($sql);
         // 쿼리 준비 실패 시 null 반환
@@ -138,14 +138,14 @@ class TripsRepository {
     }
 
     // 4. tripId로 trip 목록 조회 (성공시 배열, 실패시 null 반환)
-    public function findTripsByUserId(int $userId, int $limit, int $offset): array|null {
-      // 4-1. limit와 offset을 정수로 변환
-      $limit = (int)$limit;
-      $offset = (int)$offset;
+    public function findTripsByUserId(int $userId, int $page, int $size): array|null {
+      // 4-1. page와 size을 정수로 변환
+      $page = (int)$page;
+      $size = (int)$size;
       
-      // 4-2. limit와 offset이 음수일 경우 0으로 설정
-      if ($limit < 0) $limit = 0;
-      if ($offset < 0) $offset = 0;
+      // 4-2. page와 size이 음수일 경우 0으로 설정
+      if ($page < 0) $page = 0;
+      if ($size < 0) $size = 0;
 
       // 4-3. SQL 작성
       $sql = "
@@ -155,7 +155,7 @@ class TripsRepository {
         LEFT JOIN Region AS r ON t.region_id = r.region_id
         WHERE t.user_id = :user_id
         ORDER BY t.created_at DESC
-        LIMIT $limit OFFSET $offset
+        page $page size $size
       ";
       // 4-4. 쿼리 준비
       $stmt = $this->pdo->prepare($sql);
