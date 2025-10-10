@@ -84,4 +84,23 @@ class TripsService {
     return $trip;
   }
 
+  // 7. 여행 목록 조회 메서드
+  public function findTrips(int $userId, int $page, int $size): array|false {
+    // 7-1. userId가 0 이하이거나 페이지나 크기가 1 이하이면 false 반환
+    if ($userId <= 0 || $page <= 0 || $size <= 0) {
+      return false;
+    }
+    // 7-2. TripsRepository의 findTrips 메서드 호출
+    $trips = $this->tripsRepository->findTripsByUserId($userId, $page, $size);
+
+    // 7-3. 조회 실패 시 false 반환
+    if ($trips === null) {
+      return false;
+    }
+    // 7-4. 조회 성공 시 여행 목록 배열 반환
+    return $trips;
+   
+
+  }
+
 }
