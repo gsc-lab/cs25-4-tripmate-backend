@@ -93,10 +93,6 @@ class TripsService {
     // 7-2. TripsRepository의 findTrips 메서드 호출
     $trips = $this->tripsRepository->findTripsByUserId($userId, $page, $size);
 
-    // 7-3. 조회 실패 시 false 반환
-    if ($trips === null) {
-      return false;
-    }
     // 7-4. 조회 성공 시 여행 목록 배열 반환
     return $trips;
    
