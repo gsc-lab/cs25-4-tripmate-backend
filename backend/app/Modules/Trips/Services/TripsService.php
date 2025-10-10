@@ -164,4 +164,38 @@ class TripsService {
   } 
 
   // 9. 여행 삭제 메서드
+  public function deleteTrip(int $userId, int $tripId): bool {
+    // 9-1. tripId가 0 이하이면 false 반환
+    if ($tripId <= 0) {
+      return false;
+    }
+
+    // 9-2. 트랜잭션 시작
+    if (!$this->tripsRepository->beginTransaction()) {
+      return false;
+    }
+
+    // 9-3. TripsRepository의 deleteTripDaysByTripId 메서드 호출 (여행 일자 삭제)
+    if (!$this->tripsRepository->deleteTripDaysByTripId($tripId)) {
+      // 9-4. 삭제 실패 시 롤백 후 false 반환
+      $this->tripsRepository->rollBack();
+      return false;
+    }
+
+    // 9-5. TripsRepository의 deleteTrip 메서드 호출 (여행 기본정보 삭제)
+    if (!$this->tripsRepository->deleteTrip($userId, $tripId)) {
+      // 9-6. 삭제 실패 시 롤백 후 false 반환
+      $this->tripsRepository->rollBack();
+      return false;
+    }
+
+    // 9-7. 커밋이 실패하면 롤백 후 false 반환
+    if (!$this->tripsRepository->commit()) {
+      $this->tripsRepository->rollBack();
+      return false;
+    }
+
+    // 9-8. 모든 작업이 성공하면 true 반환
+    return true;
+  }
 }
