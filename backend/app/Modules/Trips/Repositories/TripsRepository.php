@@ -238,7 +238,26 @@ class TripsRepository {
         ':user_id' => $userId,
       ]) !== false; // 실패시 false 반환
       
-    
+    }
+
+    // 6. 여행 삭제 메서드
+    public function deleteTrip(int $userId, int $tripId) : bool {
+      // 6-1. SQL 작성
+      $sql = "
+        DELETE FROM Trip
+        WHERE trip_id = :trip_id AND user_id = :user_id
+      ";
+      // 6-2. 쿼리 준비
+      $stmt = $this->pdo->prepare($sql);
+      // 쿼리 준비 실패 시 false 반환
+      if ($stmt === false) {
+        return false;
+      }
+      // 6-3. 쿼리 실행 및 성공 여부 반환
+      return $stmt->execute([
+        ':trip_id' => $tripId,
+        ':user_id' => $userId,
+      ]) !== false; // 실패시 false 반환
     }
 
   }
