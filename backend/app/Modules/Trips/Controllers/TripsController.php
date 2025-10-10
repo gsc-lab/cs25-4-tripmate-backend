@@ -157,6 +157,28 @@ class TripsController extends Controller {
 
   // 8. 여행 삭제 : DELETE /api/v1/trips/{trip_id}
   // 8-1. deleteTrip 메서드 정의
-  public function deleteTrip() {}
+  public function deleteTrip($tripId) {
+    // 8-2. trip_id가 없으면 400 응답
+    if ($tripId <= 0) {
+      return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
+    }
+
+    // 8-3. 임시: 로그인 미구현 상태 -> userId를 1로 고정
+    $userId = 1;
+
+    // 8-4. TripsService의 deleteTrip 호출
+    $deleted = $this->tripsService->deleteTrip($userId, (int)$tripId);
+
+    // 8-5. 삭제 실패 시 404 응답
+    if ($deleted === false) {
+      return $this->response->error('DELETION_FAILED', '여행 삭제에 실패했습니다.', 404);
+    }
+
+    // 8-6. 성공 시 응답 (삭제된 trip_id 반환)
+    return $this->response->success(
+      ['trip_id' => $tripId],
+      200
+    );
+  }
 
 }
