@@ -115,7 +115,45 @@ class TripsController extends Controller {
 
   // 7. 여행 수정 : PUT /api/v1/trips/{trip_id}
   // 7-1. updateTrip 메서드 정의
-  public function updateTrip() {}
+  public function updateTrip(int $tripId) {
+    // 7-2. trip_id가 없으면 400 응답
+    if ($tripId <= 0) {
+      return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
+    }
+
+    // 7-3. 요청 데이터 가져오기
+    $body = $this->request->body ?? [];
+
+    // 7-4. 유효성 검증
+    if (empty($body['region_id']) || empty($body['title']) || empty($body['start_date']) || empty($body['end_date'])) {
+      // 7-5. 필수 값 누락 시 422 응답
+      return $this->response->error('VALIDATION_ERROR', '필수 값이 누락되었습니다.', 422);
+    }
+
+    // 7-6. 임시: 로그인 미구현 상태 -> userId를 1로 고정
+    $userId = 1;
+
+    // 7-7. TripsService의 updateTrip 호출
+     $updated = $this->tripsService->updateTrip(
+        $userId,
+        $tripId,
+        (int)$body['region_id'],
+        (string)$body['title'],
+        (string)$body['start_date'],
+        (string)$body['end_date']
+    );
+
+    // 7-8. 수정 실패 시 404 응답
+    if ($updated === false) {
+      return $this->response->error('UPDATE_FAILED', '여행 수정에 실패했습니다.', 404);
+    }
+
+    // 7-9. 성공 시 응답 (수정된 trip_id 반환)
+    return $this->response->success(
+      ['trip_id' => $tripId],
+      200
+    );
+  }
 
   // 8. 여행 삭제 : DELETE /api/v1/trips/{trip_id}
   // 8-1. deleteTrip 메서드 정의
