@@ -204,7 +204,7 @@ class TripsRepository {
     }
 
     // 5. 여행 수정 메서드 
-    public function updateTrips(
+    public function updateTrip(
       int $userId,
       int $tripId,
       int $regionId,
@@ -240,8 +240,8 @@ class TripsRepository {
       
     }
 
-    // 6. 여행 삭제 메서드
-    public function deleteTrip(int $userId, int $tripId) : bool {
+    // 6. TripDay 삭제 메서드
+    public function deleteTripDay(int $userId, int $tripId) : bool {
       // 6-1. SQL 작성
       $sql = "
         DELETE FROM Trip
