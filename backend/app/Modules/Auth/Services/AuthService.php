@@ -34,7 +34,7 @@
         }
 
         // 로그인
-        public function loginServeices($data) {
+        public function loginServices($data) {
             // 데이터 확인
             $email = $data['email'];
             $pwd = $data['password'];
