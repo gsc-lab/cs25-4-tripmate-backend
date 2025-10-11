@@ -35,7 +35,7 @@
         // 회원가입 유효성 검증
         public function validateUserRegister(array $date) {
             // email, password 검증
-            $result = $this->validationUser($date);
+            $result = $this->validateUser($date);
             // 에러 발생
             if ($result !== true) {
                 return $result;
@@ -69,7 +69,7 @@
         // 일차 생성 유효성 검증
         public function validateDays(array $date) {
             // memo 검증
-            $result = $this->validationMemo($date);
+            $result = $this->validateMemo($date);
             if ($result !== true) {
                 return $result;
             }
@@ -118,7 +118,7 @@
         // 일정 아이템 추가 유형성 검증
         public function validateRelocation(array $date) {
             // 시간 및 순서 검증
-            $result = $this->validationAddPlace($date);
+            $result = $this->validateAddPlace($date);
             if ($result !== true) {
                 return $result;
             }
