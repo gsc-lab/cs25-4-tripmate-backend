@@ -1,6 +1,6 @@
 <?php
     use Tripmate\Backend\Core\Request;
-    use Tripmate\Backend\Core\response;
+    use Tripmate\Backend\Core\Response;
     use Tripmate\Backend\Modules\Auth\Controllers\AuthController;
 
     // Auth 라우트 등록
