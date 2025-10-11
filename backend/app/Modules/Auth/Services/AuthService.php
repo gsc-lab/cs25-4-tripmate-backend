@@ -3,7 +3,6 @@
 
     use Tripmate\Backend\Common\Utils\Password;
     use Tripmate\Backend\Modules\Auth\Repositories\UserRepository;
-    use Tripmate\Backend\Modules\Auth\Repositories\User;
     use Tripmate\Backend\Common\Middleware\AuthMiddleware as amw;
 
     // 서비스 로직
