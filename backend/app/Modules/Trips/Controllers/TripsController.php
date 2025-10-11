@@ -1,6 +1,7 @@
 <?php
 namespace Tripmate\Backend\Modules\Trips\Controllers;
 
+use Tripmate\Backend\Common\Middleware\AuthMiddleware;
 use Tripmate\Backend\Core\Controller;
 use Tripmate\Backend\Modules\Trips\Services\TripsService;
 use Tripmate\Backend\Core\Request;
@@ -69,9 +70,9 @@ class TripsController extends Controller {
     $page = isset($query['page']) && ctype_digit($query['page']) && (int)$query['page'] > 0 ? (int)$query['page'] : 1;
     $perPage = isset($query['per_page']) && ctype_digit($query['per_page']) && (int)$query['per_page'] > 0 ? (int)$query['per_page'] : 20;
 
-    // 5-3. 임시: 로그인 미구현 상태 -> userId를 1로 고정
-    $userId = 1;
-
+    // 5-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    
     // 5-4. TripsService의 findTrips 호출
     $trips = $this->tripsService->findTrips($userId, $page, $perPage);
 
@@ -130,8 +131,8 @@ class TripsController extends Controller {
       return $this->response->error('VALIDATION_ERROR', '필수 값이 누락되었습니다.', 422);
     }
 
-    // 7-6. 임시: 로그인 미구현 상태 -> userId를 1로 고정
-    $userId = 1;
+    // 7-6. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
 
     // 7-7. TripsService의 updateTrip 호출
      $updated = $this->tripsService->updateTrip(
@@ -163,8 +164,8 @@ class TripsController extends Controller {
       return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
     }
 
-    // 8-3. 임시: 로그인 미구현 상태 -> userId를 1로 고정
-    $userId = 1;
+    // 8-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
 
     // 8-4. TripsService의 deleteTrip 호출
     $deleted = $this->tripsService->deleteTrip($userId, (int)$tripId);
