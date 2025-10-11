@@ -3,7 +3,6 @@
 
     use Tripmate\Backend\Common\Utils\Password;
     use Tripmate\Backend\Modules\Auth\Repositories\UserRepository;
-    use Tripmate\Backend\Modules\Auth\Repositories\User;
     use Tripmate\Backend\Common\Middleware\AuthMiddleware as amw;
 
     // 서비스 로직
@@ -16,32 +15,32 @@
         }
 
         // 회원가입 로직
-        public function RegisterServeices(array $data) {
+        public function registerServices(array $data) {
             // 데이터 꺼내기
             $email = $data['email'];
             $password = $data['password'];
             $nickname = $data['nickname'];
 
             // 비밀번호 해쉬화
-            $pwd_hash = Password::PasswordHash($password);
+            $pwdHash = Password::passwordHash($password);
 
             // 이메일 정규화
-            $email_norm = strtolower($email);
+            $emailNorm = strtolower($email);
             
             // DB 실행
-            $result = $this->repository->RegisterDB($email_norm, $pwd_hash, $nickname);
+            $result = $this->repository->registerDB($emailNorm, $pwdHash, $nickname);
 
             return $result;
         }
 
         // 로그인
-        public function LoginServeices($data) {
+        public function loginServices($data) {
             // 데이터 확인
             $email = $data['email'];
             $pwd = $data['password'];
 
             // DB 실행
-            $result = $this->repository->LoginDB($email, $pwd);
+            $result = $this->repository->loginDB($email, $pwd);
 
             if (is_int($result)) { 
                 $jwt = amw::tokenRequest($result);
