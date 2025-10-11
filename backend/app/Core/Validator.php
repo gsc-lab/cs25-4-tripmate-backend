@@ -2,8 +2,8 @@
     namespace Tripmate\Backend\Core;  // 네임스페이스 정의 (APP가 찾게 하기 위해)
 
     // validator, NestedValidatonException 라이브러리 가져와 사용
-    use Respect\validation\Validator as v;
-    use Respect\validation\Exceptions\NestedvalidationException as nve;
+    use Respect\Validation\Validator as v;
+    use Respect\Validation\Exceptions\NestedValidationException as nve;
 
     // 클래스 정의
     class Validator {
