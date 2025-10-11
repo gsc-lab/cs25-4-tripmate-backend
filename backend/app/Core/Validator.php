@@ -61,7 +61,7 @@
         // 일차 속성(메모) 수정 유효성 검증
         public function ValidationMemo(array $date) {
             // memo 검증
-            $validation = v::key('memo', v::length(null, 255));
+            $validation = v::key('memo', v::length(null, 255), false);
 
             return $this->ErrorCheck($validation, $date);
         }
@@ -96,9 +96,13 @@
         // 외부 결과를 내부로 저장 유효성 검증
         public function ValidationPlaceCategory(array $date) {
             $validation = v::key('place', v::stringType()->notEmpty(), true)
+                -> key('name', v::stringType()->notEmpty())
                 -> key('category_id', v::intVal()->notEmpty())
                 -> key('address', v::stringType()->notEmpty())
-                -> key('external_ref', v::stringType()->notEmpty());
+                -> key('external_ref', v::stringType()->notEmpty())
+                -> key('lat', v::floatType()->notEmpty())
+                -> key('lng', v::floatType()->notEmpty())
+                -> key('url', v::notEmpty(), false);
 
             return $this->ErrorCheck($validation, $date);
         }
@@ -191,11 +195,11 @@
         public function ValidationPlace(array $date) {
             // 장소 검증
             $validation = v::key('place', v::notEmpty(), true)
-                -> key('radius', v::stringType())
-                -> key('lat', v::floatVal()->notEmpty())
-                -> key('lng', v::floatVal()->notEmpty())
-                -> key('sort', v::stringType())
-                -> key('page', v::intVal());
+                -> key('radius', v::stringType(), false)
+                -> key('lat', v::floatVal()->notEmpty(), false)
+                -> key('lng', v::floatVal()->notEmpty(), false)
+                -> key('sort', v::stringType(), false)
+                -> key('page', v::intVal(), false);
 
             return $this->ErrorCheck($validation, $date);
         }
@@ -203,8 +207,8 @@
         /**  @param 쿼리*/
         // 일정 아이템 목록 유효성 검증
         public function ValidationItem(array $date) {
-            $validation = v::key('page', v::intVal())
-                        -> key('sort', v::stringType());
+            $validation = v::key('page', v::intVal(), false)
+                        -> key('sort', v::stringType(), false);
             
             return $this->ErrorCheck($validation, $date);
         }
