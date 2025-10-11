@@ -147,6 +147,66 @@ class TripDaysRepository {
     return (int)$maxCount['max_day_no'];
   }
 
+  // 4. (중간 삽입용) addDay 다음으로 day_no +1씩 밀어내는 메서드
+  public function shiftDayNos(int $tripId, int $addDay) : bool {
+    // 4-1. sql 작성 (해당 trip_id의 day_no가 addDay 이상인 행들의 day_no를 +1씩 증가)
+    $sql = "UPDATE TripDay
+            SET day_no = day_no + 1, updated_at = NOW()
+            WHERE trip_id = :trip_id 
+            AND day_no >= :add_day";
+
+    // 4-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 4-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+    // 4-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_id' => $tripId,
+      ':add_day' => $addDay
+    ]);
+    // 4-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+    // 4-6. 성공 시 true 반환
+    return true;
+  }
+
+  // 5. tripday 삽입 메서드
+  public function insertTripDay(int $tripId, int $dayNo, ?string $memo) : int|false {
+    // 5-1. sql 작성
+    $sql = "INSERT INTO TripDay (trip_id, day_no, memo, created_at, updated_at)
+            VALUES (:trip_id, :day_no, :memo, NOW(), NOW())";
+    // 5-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 5-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+    // 5-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_id' => $tripId,
+      ':day_no'  => $dayNo,
+      ':memo'    => $memo,
+    ]);
+    // 5-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+    // 5-6. 삽입된 행의 ID 가져오기
+    $id = (int)$this->pdo->lastInsertId();
+    // 5-7. ID가 0이면 false 반환
+    if ($id === 0) {
+      return false;
+    }
+    // 5-8. 성공시 ID 반환
+    return $id;
+
+  }
+
+
 
 
 
