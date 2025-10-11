@@ -18,7 +18,7 @@
         }
 
         // 회원가입 로직
-        public function RegisterDB($email, $pwd_hash, $nickname) {
+        public function registerDB($email, $pwdHash, $nickname) {
             // 트레젝션
             $this->pdo->beginTransaction();
 
@@ -38,7 +38,7 @@
             // 중복 값이 없을 경우 값 넣기
             $insert = $this->pdo->prepare("INSERT INTO Users (email_norm, password_hash, name) VALUES (:email_norm, :password_hash, :name);");
             
-            if ($insert->execute(['email_norm' => $email, 'password_hash' => $pwd_hash, 'name' => $nickname])) {
+            if ($insert->execute(['email_norm' => $email, 'password_hash' => $pwdHash, 'name' => $nickname])) {
                 // DB 처리 완료
                 $this->pdo->commit();
 
@@ -51,12 +51,12 @@
             }
         }
         // 로그인 로직
-        public function LoginDB($email, $pwd) {
+        public function loginDB($email, $pwd) {
             // 트레젝션 실행
             $this->pdo->beginTransaction();
 
             // 이메일을 이용해 조회
-            $query = $this->pdo->prepare("SELECT user_id, password_hash FROM Users WHERE email_norm = ?;");
+            $query = $this->pdo->prepare("SELECT userId, password_hash FROM Users WHERE email_norm = ?;");
             
             if(!$query->execute([$email])) {
                 $this->pdo->rollback();
@@ -73,15 +73,15 @@
             }
 
             // 조회한 데이터 꺼내기
-            $user_id = $data['user_id'];
-            $pwd_hash = $data['password_hash'];
+            $userId = $data['userId'];
+            $pwdHash = $data['password_hash'];
 
             $this->pdo->commit();
 
             // 비밀번호 검증
-            if(Password::PasswordValdataion($pwd, $pwd_hash)) {
+            if(Password::passwordValdataion($pwd, $pwdHash)) {
                 // JWT 발급
-                return $user_id;
+                return $userId;
             } else {
                 // 비밀번호가 알맞지 않을 경우
                 return "AUTH_FAILED";
