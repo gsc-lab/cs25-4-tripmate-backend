@@ -36,8 +36,8 @@ class TripsController extends Controller {
         return $this->response->error('VALIDATION_ERROR', $validationResult, 422);
     }
 
-    // 4-3. 임시: 로그인 미구현 상태 -> userId를 1로 고정
-    $userId = 1;
+    // 4-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
 
     // 4-4. TripsService의 createTrip 호출
     $tripId = $this->tripsService->createTrip(
