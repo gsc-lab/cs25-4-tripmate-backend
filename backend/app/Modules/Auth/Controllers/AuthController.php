@@ -48,7 +48,7 @@
                 
             } else {
                 // 에러 메세지 출력
-                $this->error($result, "입력값이 잘못되었습니다dfgdfg.");
+                $this->error($result, "입력값이 잘못되었습니다.");
             }
         }
 
