@@ -30,8 +30,9 @@ $match = $router->match();
 
 //  3-1. 찾으면 해당 콜백 실행
 if ($match && is_callable($match['target'])) {
-  call_user_func_array($match['target'], $match['params']);
-}
+  // params를 위치 인자로 전달
+  call_user_func_array($match['target'], array_values($match['params'] ?? []));
+} 
 //  3-2. 못찾으면 error 404 응답
 else {
   $response->error('NOT_FOUND', 'Route not found', 404);
