@@ -31,7 +31,7 @@ class TripsController extends Controller {
     $body = $this->request->body ?? [];
 
     // 4-2. 유효성 검증
-    $validationResult = $this->validator->ValidationTrip($body);
+    $validationResult = $this->validator->validateTrip($body);
     if ($validationResult !== true) {
         return $this->response->error('VALIDATION_ERROR', $validationResult, 422);
     }
