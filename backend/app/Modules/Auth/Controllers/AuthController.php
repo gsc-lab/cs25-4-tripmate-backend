@@ -61,7 +61,7 @@
             $result = $this->validator->validateUser($data);
 
             // 입력 유효 여부 
-            if ($result) {
+            if ($result === true) {
                 // 서비스 연결
                 $serverResponse = $this->services->loginServices($data);
 
