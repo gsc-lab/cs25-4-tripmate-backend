@@ -11,7 +11,7 @@
     // 컨트롤러
     class AuthController extends Controller {
         public Validator $validator;
-        public AuthService $serveices;
+        public AuthService $services;
 
         // 공통 생성자
         public function __construct($request, $response) {
@@ -19,7 +19,7 @@
             parent::__construct($request, $response);
 
             // 서비스 객체 생성
-            $this->serveices = new AuthService();
+            $this->services = new AuthService();
 
             // 유효성 검증
             $this->validator = new Validator();
@@ -35,7 +35,7 @@
             $result = $this->validator->validateUserRegister($data);
             if($result === true) {
                 // 서비스 연결
-                $serverResponse = $this->serveices->registerServices($data);
+                $serverResponse = $this->services->registerServices($data);
                 
                 // 응답 출력
                 if ($serverResponse == "REGISTER_SUCCESS") {
@@ -63,7 +63,7 @@
             // 입력 유효 여부 
             if ($result) {
                 // 서비스 연결
-                $serverResponse = $this->serveices->loginServeices($data);
+                $serverResponse = $this->services->loginServices($data);
 
                 // 비밀번호 또는 jwt 발급 실패 시
                 if ($serverResponse == "AUTH_FAILED") {
