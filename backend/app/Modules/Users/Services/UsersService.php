@@ -13,17 +13,17 @@
         }
 
         // 내 정보 조회
-        public function UserMyPageService($user_id) {
+        public function userMyPageService($userId) {
             //db 호출
-            $result = $this->repository->UserMyPageRepository($user_id);
+            $result = $this->repository->userMyPageRepository($userId);
             
             return $result;
         }
 
         // 회원 탈퇴
-        public function UserSecessionService($user_id) {
+        public function userSecessionService($userId) {
             // DB에 전달
-            $result = $this->repository->UserSecessionRepository($user_id);
+            $result = $this->repository->userSecessionRepository($userId);
         
             return $result;
         }
