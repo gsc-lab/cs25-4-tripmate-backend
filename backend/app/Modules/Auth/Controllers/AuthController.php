@@ -27,7 +27,7 @@
         }
 
         // 회원가입
-        public function UserRegister() {
+        public function userRegister() {
             // 요청 데이터
             $data = $this->request->body;
 
