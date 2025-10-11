@@ -56,7 +56,7 @@
             $this->pdo->beginTransaction();
 
             // 이메일을 이용해 조회
-            $query = $this->pdo->prepare("SELECT userId, password_hash FROM Users WHERE email_norm = ?;");
+            $query = $this->pdo->prepare("SELECT user_id, password_hash FROM Users WHERE email_norm = ?;");
             
             if(!$query->execute([$email])) {
                 $this->pdo->rollback();
@@ -73,7 +73,7 @@
             }
 
             // 조회한 데이터 꺼내기
-            $userId = $data['userId'];
+            $userId = $data['user_id'];
             $pwdHash = $data['password_hash'];
 
             $this->pdo->commit();
