@@ -143,7 +143,10 @@ class TripDaysRepository {
     if ($maxCount === false) {
       return false;
     }
-    // 3-8. 최대 day_no 반환
+    // 3-8. 최대 day_no 반환 (null이면 false 반환)
+    if ($maxCount['max_day_no'] === null) {
+      return false;
+    }
     return (int)$maxCount['max_day_no'];
   }
 
@@ -151,9 +154,11 @@ class TripDaysRepository {
   public function shiftDayNos(int $tripId, int $addDay) : bool {
     // 4-1. sql 작성 (해당 trip_id의 day_no가 addDay 이상인 행들의 day_no를 +1씩 증가)
     $sql = "UPDATE TripDay
-            SET day_no = day_no + 1, updated_at = NOW()
+            SET day_no = day_no + 1, 
+                updated_at = NOW()
             WHERE trip_id = :trip_id 
-            AND day_no >= :add_day";
+            AND day_no >= :add_day
+            ORDER BY day_no DESC "; // 내림차순 정렬로 밀어내기 충돌 방지
 
     // 4-2. 쿼리 준비
     $stmt = $this->pdo->prepare($sql);
@@ -205,6 +210,33 @@ class TripDaysRepository {
     return $id;
 
   }
+
+  // 6. trip의 day_count 업데이트 메서드
+  public function updateTripDayCount(int $tripId, int $newDayCount) : bool {
+    // 6-1. sql 작성
+    $sql = "UPDATE Trip
+            SET day_count = :new_day_count, updated_at = NOW()
+            WHERE trip_id = :trip_id";
+    // 6-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 6-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+    // 6-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':new_day_count' => $newDayCount,
+      ':trip_id'       => $tripId
+    ]);
+    // 6-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+    // 6-6. 성공 시 true 반환
+    return true;
+  }
+
+  
 
 
 
