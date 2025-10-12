@@ -46,10 +46,20 @@
             // 유효성 검증
             $data = $this->request->body;
             if ($this->validator->validatePlaceCategory($data) !== true) {
-                
+                $this->error("AUTH_FAILED", "입력값이 유효하지 않습니다. 다시 한 번 확인해주세요.");
+                exit;
             }
 
             // 서비스 전달
-            $place = $this->service->searchService($userId);
+            $place = $this->service->upsertService($data);
+
+            if ($place == "CATEGORY_FAIL") {
+                $this->error($place, "카테고리 정보 처리에 실패했습니다.");
+            } else if($place == "PLACE_FAIL") {
+                $this->error($place, "장소 정보 처리에 실패했습니다.");
+            } else {
+                $this->success($place);
+            }
+
         }
     } 
