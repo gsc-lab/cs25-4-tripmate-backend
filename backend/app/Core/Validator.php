@@ -2,8 +2,8 @@
     namespace Tripmate\Backend\Core;  // 네임스페이스 정의 (APP가 찾게 하기 위해)
 
     // validator, NestedValidatonException 라이브러리 가져와 사용
-    use Respect\validation\Validator as v;
-    use Respect\validation\Exceptions\NestedvalidationException as nve;
+    use Respect\Validation\Validator as v;
+    use Respect\Validation\Exceptions\NestedvalidationException as nve;
 
     // 클래스 정의
     class Validator {
@@ -95,9 +95,9 @@
 
         // 외부 결과를 내부로 저장 유효성 검증
         public function validatePlaceCategory(array $date) {
-            $validation = v::key('place', v::stringType()->notEmpty(), true)
+            $validation = v::key('place', v::stringType()->notEmpty(), false)
                 -> key('name', v::stringType()->notEmpty(), true)
-                -> key('category_id', v::intVal()->notEmpty(), true)
+                -> key('category', v::stringVal()->notEmpty(), true)
                 -> key('address', v::stringType()->notEmpty(), true)
                 -> key('external_ref', v::stringType()->notEmpty(), true)
                 -> key('lat', v::floatType()->notEmpty(), true)
