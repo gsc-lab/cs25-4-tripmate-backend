@@ -9,7 +9,7 @@
         $router->map('GET', '/api/v1/places/external-search', [new PlacesController($request, $response), 'search']);
 
         //  라우팅 등록
-        $router->map('GET', '/api/v1/places', [new PlacesController($request, $response), '']);
+        $router->map('GET', '/api/v1/places/[i:place_id]', [new PlacesController($request, $response), 'singlePlaceSearch']);
 
         //  라우팅 등록
         $router->map('POST', '/api/v1/places/from-external', [new PlacesController($request, $response), 'placeUpsert']);
