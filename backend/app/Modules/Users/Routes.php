@@ -9,5 +9,5 @@
         $router->map('GET', '/api/v1/users/me', [new UsersController($request, $response), 'userMyPage']);
 
         //  라우팅 등록
-        $router->map('DELETE', '/api/v1/auth/login', [new UsersController($request, $response), 'userSecession']);
+        $router->map('DELETE', '/api/v1/users/me', [new UsersController($request, $response), 'userSecession']);
     };
