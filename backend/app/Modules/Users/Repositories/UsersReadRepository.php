@@ -25,7 +25,6 @@
         
             // email 값 넣기
             if(!$query->execute([$userId])) {
-                var_dump($query->errorInfo());
                 $this->pdo->rollback();
                 return "DB_EXCEPTION";
             } 
