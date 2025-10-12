@@ -81,4 +81,12 @@
 
             return $result;
         }
+
+        // 장소 단건 조회
+        public function singlePlaceService($placeId) {
+            // db 전달
+            $result = $this->repository->placeRepository($placeId);
+
+            return $result;
+        }
     }
