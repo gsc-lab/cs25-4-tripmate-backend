@@ -72,4 +72,34 @@
 
             return $totalData;
         }
+
+        // 장소 단건 조회
+        public function placeRepository($placeId) {
+            // 트레젝션
+            $this->pdo->beginTransaction();
+
+            // place 조회
+            $categoryResult = $this->pdo->prepare("SELECT p.place_id, p.name, p.address, p.lat, p.lng, pc.name AS category 
+                                FROM Place p 
+                                LEFT JOIN PlaceCategory pc ON p.category_id=pc.category_id 
+                                WHERE p.place_id = ?;");
+
+            
+            if(!$categoryResult->execute([$placeId])) {
+                $this->pdo->rollback();
+                return "PLACE_FAIL";
+            } 
+
+            // 값 꺼내기
+            $data = $categoryResult->fetch($this->pdo::FETCH_ASSOC);
+
+            if(!$data) {
+                $this->pdo->rollback();
+                return "PLACE_FAIL";
+            }
+
+            $this->pdo->commit();
+
+            return $data; 
+        }
     }
