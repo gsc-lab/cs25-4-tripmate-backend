@@ -142,7 +142,7 @@
         }
 
         /**  @param  */
-        public function validateDay(array $date) {
+        public function validateDay($date) {
             // 일정 아이템 id 검증
             $validation = v::key('item_id', v::notEmpty()->intVal(), true);
 
@@ -150,7 +150,7 @@
         }
 
         /**  @param  */
-        public function validatePlaceId(array $date) {
+        public function validatePlaceId($date) {
             // 장소 id 검증
             $validation = v::key('place_id', v::notEmpty()->intVal(), true);
 
@@ -158,7 +158,7 @@
         }
         
         /**  @param  */
-        public function validateDayId(array $date) {
+        public function validateDayId($date) {
             // 일차 id 검증
             $validation = v::key('day_no', v::notEmpty()->intVal(), true);
 
@@ -166,7 +166,7 @@
         }
 
         /**  @param  */
-        public function validateTripId(array $date) {
+        public function validateTripId($date) {
             // 여행 생성 id
             $validation = v::key('trip_id', v::notEmpty()->intVal(), true);
 
@@ -183,7 +183,7 @@
 
 
         /**  @param 쿼리*/
-        public function validateRegionSearch(array $date) {
+        public function validateRegionSearch($date) {
             // 지역 이름 검증
             $validation = v::key('query', v::notEmpty()->stringType(), true);
 
