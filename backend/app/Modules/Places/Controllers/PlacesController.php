@@ -60,6 +60,18 @@
             } else {
                 $this->success($place);
             }
+        }
 
+        // 단건 조회
+        public function singlePlaceSearch(int $placeId) {
+            
+            // 서비스 전달
+            $result = $this->service->singlePlaceService($placeId);
+        
+            if($result == "PLACE_FAIL") {
+                $this->error($result, "장소 정보 처리에 실패했습니다.");
+            } else {
+                $this->success($result);
+            }
         }
     } 
