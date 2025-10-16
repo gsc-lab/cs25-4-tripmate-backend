@@ -103,8 +103,11 @@ class TripsController extends Controller {
     if ($tripId <= 0) {
       return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
     }
+    // 6-2. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+
     // 6-2. TripsService의 findTripById 호출
-    $trip = $this->tripsService->findTripById($tripId);
+     $trip = $this->tripsService->findTripById($tripId, (int)$userId);
 
     // 6-3. 조회 실패 시 404 응답
     if ($trip === false) {
