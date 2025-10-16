@@ -306,10 +306,42 @@ class TripDaysRepository {
 
   }
 
+
+  // 8. tripday 단건 조회 메서드
+  public function findByTripAndDayNo(int $tripId, int $dayNo) :array|false {
+    // 8-1. sql 작성 (trip_id와 day_no에 해당하는 tripday 조회)
+    $sql = "SELECT trip_day_id, trip_id, day_no, memo, created_at, updated_at
+            FROM TripDay
+            WHERE trip_id = :trip_id AND day_no = :day_no";
+    
+    // 8-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 8-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+
+    // 8-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_id' => $tripId,
+      ':day_no'  => $dayNo
+    ]);
+
+    // 8-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+
+    // 8-6. 결과 가져오기
+    $tripDay = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // 8-7. 결과가 없으면 false 
+    if ($tripDay === false) {
+      return false;
+    }
+    // 8-8. 성공 시 tripday 배열 반환
+    return $tripDay;
+
+  }
   
-
-
-
-
-
 }
