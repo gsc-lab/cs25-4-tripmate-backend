@@ -1,5 +1,5 @@
 <?php
-    namespace Tripmate\Backend\database\seeds;
+    namespace Tripmate\Backend\Modules\Places\Services;
 
     use Tripmate\Backend\Core\DB;
 
