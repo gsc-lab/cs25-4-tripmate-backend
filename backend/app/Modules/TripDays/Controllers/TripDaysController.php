@@ -28,7 +28,99 @@ class TripDaysController extends Controller {
   }
 
   // 3. trip day 생성 : POST /api/v1/trips/{trip_id}/days
+  // 3-1. createTripDay 메서드 정의
+  public function createTripDay(int $tripId) {
+
+    // 3-2. trip_id가 없으면 에러 응답
+    if (!$tripId) {
+        return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    }
+
+    // 3-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 3-4. 유효하지 않은 토큰일 시 에러 응답
+    if (!$userId) {
+        return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
+    }
+
+    // 3-5. 유효성 검증
+    $body = $this->request->body ?? [];
+
+    $validation = $this->validator->validateDays($body);
+    // 3-6. 검증 실패시 에러 응답
+    if ($validation !== true) {
+        return $this->response->error('VALIDATION_ERROR', $validation, 422);
+    }
+    
+    // 3-7. TripDaysService의 addTripDay 호출
+    $tripDayId = $this->tripDaysService->addTripDay(
+        (int)$userId,
+        (int)$body['trip_id'],
+        (int)$body['day_no']
+    );
+
+    // 3-8. 실패 시 응답
+    if ($tripDayId === false) {
+        return $this->response->error('CREATION_FAILED', '여행 일자 생성에 실패했습니다.', 500);
+    }
+
+    // 3-9. 성공 시 응답 (생성된 trip_day_id 반환)
+    return $this->response->success(
+        ['trip_day_id' => $tripDayId],
+        201
+    );
+
+   }
+
+  // 4. trip day 단건 조회 : GET /api/v1/trips/{trip_id}/days/{day_no}
+  // 4-1. getTripDay 메서드 정의
+  public function getTripDay($tripId, $dayNo) {
+    // 4-2. trip_id 또는 day_no가 없으면 에러 응답
+    if (!$tripId || !$dayNo) {
+        return $this->response->error('MISSING_PARAMETERS', 'trip_id와 day_no가 필요합니다.', 400);
+    }
+
+    // 4-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 4-4. 유효하지 않은 토큰일 시 에러 응답
+    if (!$userId) {
+        return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
+    }
+
+    // 4-5. TripDaysService의 getTripDay 호출
+    $tripDay = $this->tripDaysService->getTripDay(
+      (int)$userId,
+      (int)$tripId,
+      (int)$dayNo
+    );
+
+    // 4-6. 실패 시 응답
+    if ($tripDay === false) {
+        return $this->response->error('NOT_FOUND', '해당 여행 일자를 찾을 수 없습니다.', 404);
+      }
+    
+    // 4-7. 성공 시 응답 (trip day 정보 반환)
+    return $this->response->success(
+        ['trip_day' => $tripDay],
+        200
+    );
+
+  }
+
+
+  // 5. trip day 목록 조회 : GET /api/v1/trips/{trip_id}/days
+  // 5-1. getTripDays 메서드 정의
+
+  // 6. trip day 수정 : PUT /api/v1/trips/{trip_id}/days/{day_no}
+  // 6-1. updateTripDay 메서드 정의
+
+  // 7. trip day 삭제 : DELETE /api/v1/trips/{trip_id}/days/{day_no}
+  // 7-1. deleteTripDay 메서드 정의
+
+  // 8. trip day 순서 변경 : POST /api/v1/trips/{trip_id}/days:reorder
+  // 8-1. reorderTripDays 메서드 정의
+  
+
+
 
 }
-
-
