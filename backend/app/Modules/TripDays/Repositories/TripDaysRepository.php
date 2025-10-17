@@ -47,6 +47,41 @@ class TripDaysRepository {
     return false;
   }
 
+  // tirp_i가 user_id 소유인지 확인 메서드
+  public function isTripOwner(int $tripId, int $userId) : bool {
+    // 1-1. sql 작성
+    $sql = "SELECT 1
+            FROM Trip
+            WHERE trip_id = :trip_id AND user_id = :user_id
+            LIMIT 1";
+
+    // 1-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 1-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+    // 1-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_id' => $tripId,
+      ':user_id' => $userId
+    ]);
+    
+    // 1-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+
+    // 1-6. 첫번째 컬럼 값 가져오기 
+    $exists = $stmt->fetchColumn();
+
+    // 1-7. 존재하면 true, 없으면 false 반환
+    if ($exists === false) {
+      return false;
+    }
+    return true;
+  }
+
   // 1. trip 존재 여부 및 day_count 조회 메서드
   public function getTripMeta(int $tripId) : array|false {
     // 1-1. sql 작성
@@ -310,9 +345,13 @@ class TripDaysRepository {
   // 8. tripday 단건 조회 메서드
   public function findByTripAndDayNo(int $tripId, int $dayNo) :array|false {
     // 8-1. sql 작성 (trip_id와 day_no에 해당하는 tripday 조회)
-    $sql = "SELECT trip_day_id, trip_id, day_no, memo, created_at, updated_at
-            FROM TripDay
-            WHERE trip_id = :trip_id AND day_no = :day_no";
+    $sql = "SELECT td.trip_day_id, td.trip_id, td.day_no,
+                   DATE_ADD(t.start_date, INTERVAL (td.day_no - 1) DAY) AS date,
+                   td.memo, td.created_at, td.updated_at
+            FROM TripDay td
+            INNER JOIN Trip t ON t.trip_id = td.trip_id
+            WHERE td.trip_id = :trip_id AND td.day_no = :day_no
+            LIMIT 1";
     
     // 8-2. 쿼리 준비
     $stmt = $this->pdo->prepare($sql);
