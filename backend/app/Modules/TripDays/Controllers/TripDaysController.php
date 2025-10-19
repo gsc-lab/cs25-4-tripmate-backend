@@ -45,26 +45,30 @@ class TripDaysController extends Controller {
 
     // 3-5. 유효성 검증
     $body = $this->request->body ?? [];
-
     $validation = $this->validator->validateDays($body);
-    // 3-6. 검증 실패시 에러 응답
+
+    // 3-6. memo 추출
+    $memo = $body['memo'] ?? null;
+
+    // 3-7. 검증 실패시 에러 응답
     if ($validation !== true) {
         return $this->response->error('VALIDATION_ERROR', $validation, 422);
     }
     
-    // 3-7. TripDaysService의 addTripDay 호출
+    // 3-8. TripDaysService의 addTripDay 호출
     $tripDayId = $this->tripDaysService->addTripDay(
         (int)$userId,
-        (int)$body['trip_id'],
-        (int)$body['day_no']
+        (int)$tripId,
+        (int)$body['day_no'],
+        $memo 
     );
 
-    // 3-8. 실패 시 응답
+    // 3-9. 실패 시 응답
     if ($tripDayId === false) {
         return $this->response->error('CREATION_FAILED', '여행 일자 생성에 실패했습니다.', 500);
     }
 
-    // 3-9. 성공 시 응답 (생성된 trip_day_id 반환)
+    // 3-10. 성공 시 응답 (생성된 trip_day_id 반환)
     return $this->response->success(
         ['trip_day_id' => $tripDayId],
         201
@@ -73,8 +77,8 @@ class TripDaysController extends Controller {
    }
 
   // 4. trip day 단건 조회 : GET /api/v1/trips/{trip_id}/days/{day_no}
-  // 4-1. getTripDay 메서드 정의
-  public function getTripDay($tripId, $dayNo) {
+  // 4-1. showTripDay 메서드 정의
+  public function showTripDay($tripId, $dayNo) {
     // 4-2. trip_id 또는 day_no가 없으면 에러 응답
     if (!$tripId || !$dayNo) {
         return $this->response->error('MISSING_PARAMETERS', 'trip_id와 day_no가 필요합니다.', 400);
