@@ -111,7 +111,6 @@ class TripDaysController extends Controller {
 
   }
 
-
   // 5. trip day 목록 조회 : GET /api/v1/trips/{trip_id}/days
   // 5-1. getTripDays 메서드 정의
 
@@ -120,6 +119,37 @@ class TripDaysController extends Controller {
 
   // 7. trip day 삭제 : DELETE /api/v1/trips/{trip_id}/days/{day_no}
   // 7-1. deleteTripDay 메서드 정의
+  public function deleteTripDay(int $tripId, int $dayNo) {
+    // 7-2. trip_id 또는 day_no가 없으면 에러 응답
+    if (!$tripId || !$dayNo) {
+        return $this->response->error('MISSING_PARAMETERS', 'trip_id와 day_no가 필요합니다.', 400);
+    }
+
+    // 7-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 7-4. 유효하지 않은 토큰일 시 에러 응답
+    if (!$userId) {
+        return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
+    }
+
+    // 7-5. TripDaysService의 deleteTripDay 호출
+    $deleted = $this->tripDaysService->deleteTripDay(
+      (int)$userId,
+      (int)$tripId,
+      (int)$dayNo
+    );
+
+    // 7-6. 실패 시 응답
+    if ($deleted === false) {
+        return $this->response->error('DELETION_FAILED', '여행 일자 삭제에 실패했습니다.', 500);
+      }
+    
+    // 7-7. 성공 시 응답
+    return $this->response->success(
+        ['message' => '여행 일자가 성공적으로 삭제되었습니다.'],
+        200
+    );
+  }
 
   // 8. trip day 순서 변경 : POST /api/v1/trips/{trip_id}/days:reorder
   // 8-1. reorderTripDays 메서드 정의
