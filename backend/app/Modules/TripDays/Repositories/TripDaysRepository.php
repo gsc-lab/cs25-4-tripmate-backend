@@ -352,5 +352,135 @@ class TripDaysRepository {
     return $tripDay;
 
   }
-  
+
+  // 9. trip_id + day_no로 trip_day_id 가져오기
+  public function getTripDayId(int $tripId, int $dayNo) : ?int {
+    // 9-1. sql 작성
+    $sql = "
+        SELECT trip_day_id
+        FROM TripDay
+        WHERE trip_id = :trip_id AND day_no = :day_no
+        ";
+
+    // 9-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+
+    // 9-3. 쿼리 준비 실패 시 null 반환
+    if ($stmt === false) {
+      return null;
+    }
+
+    // 9-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_id' => $tripId,
+      ':day_no'  => $dayNo
+    ]);
+
+    // 9-5. 쿼리 실행 실패 시 null 반환
+    if ($success === false) {
+      return null;
+    }
+
+    // 9-6. 결과 가져오기
+    $tripDayId = $stmt->fetchColumn();
+
+    // 9-7. 결과가 없으면 null 반환
+    if ($tripDayId === false) {
+      return null;
+    }
+
+    // 9-8. 성공 시 trip_day_id 반환
+    return (int)$tripDayId;
+  }
+
+  // 11. TripDay 삭제 메서드 (PK로 삭제)
+  public function deleteTripDay(int $tripDayId) : bool {
+    // 11-1. sql 작성
+    $sql = "
+        DELETE FROM TripDay
+        WHERE trip_day_id = :trip_day_id
+        ";
+
+    // 11-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+
+    // 11-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+
+    // 11-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_day_id' => $tripDayId
+    ]);
+
+    // 11-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+
+    // 11-6. 성공 시 true 반환
+    return true;
+  }
+
+  // 12. day_no 재정렬 메서드 (
+  // day_no > :deleteDayNo 인 tripDay들의 day_no를 -1씩 감소
+  public function reorderDayNosAfterDeletion(int $tripId, int $deleteDayNo) : bool {
+    // 12-1. sql 작성
+    $sql = "
+        UPDATE TripDay
+        SET day_no = day_no - 1,
+            updated_at = NOW()
+        WHERE trip_id = :trip_id AND day_no > :delete_day_no
+        ";
+
+    // 12-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+
+    // 12-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+
+    // 12-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_id' => $tripId,
+      ':delete_day_no' => $deleteDayNo
+    ]);
+
+    // 12-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+
+    // 12-6. 성공 시 true 반환
+    return true;
+  }
+
+  // 14. tripday 삭제 메인 메서드
+  public function deleteTripDayById(int $tripId, int $dayNo) : bool {
+    // 14-1. tripday id 조회
+    $tripDayId = $this->getTripDayId($tripId, $dayNo);
+    // 14-2. 조회 실패시 false 반환
+    if ($tripDayId === null) {
+      return false;
+    }
+
+    // 14-3. tripday 삭제 (PK로 삭제)
+    $tripDayDeleted = $this->deleteTripDay($tripDayId);
+    // 14-4. 삭제 실패 시 false 반환
+    if ($tripDayDeleted === false) {
+      return false;
+    }
+
+    // 14-5. day_no 재정렬
+    $reordered = $this->reorderDayNosAfterDeletion($tripId, $dayNo);
+    // 14-6. 재정렬 실패 시 false 반환
+    if ($reordered === false) {
+      return false;
+    }
+
+    // 14-7. 성공 시 true 반환
+    return true;
+  }
 }
