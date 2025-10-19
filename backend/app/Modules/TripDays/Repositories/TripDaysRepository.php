@@ -21,6 +21,11 @@ class TripDaysRepository {
 
   // 3. 트랜잭션 제어 메서드
   public function beginTransaction() : bool {
+    // 3-0. 이미 열려있는지 확인
+    if ($this->pdo->inTransaction()) {
+      return true;
+    }
+
     // 3-1. 실패 시 false 반환
     return $this->pdo->beginTransaction();
   }
@@ -151,38 +156,22 @@ class TripDaysRepository {
     return true;
   }
 
-  // 3. 현재 tripday의 최대 day_no 조회 메서드
   public function getMaxDayNo(int $tripId) : int|false {
-    // 3-1. sql 작성 (해당 trip_id의 최대 day_no 조회)
-    $sql = " SELECT MAX(day_no) as max_day_no
+    $sql = "SELECT MAX(day_no) AS max_day_no
             FROM TripDay
             WHERE trip_id = :trip_id";
-    
-    // 3-2. 쿼리 준비
+
     $stmt = $this->pdo->prepare($sql);
-    // 3-3. 쿼리 준비 실패 시 false 반환
-    if ($stmt === false) {
-      return false;
-    }
-    // 3-4. 쿼리 실행
-    $success = $stmt->execute([':trip_id' => $tripId]);
-    
-    // 3-5. 쿼리 실행 실패 시 false 반환
-    if ($success === false) {
-      return false;
-    }
-    
-    // 3-6. 결과 가져오기
-    $maxCount = $stmt->fetch(PDO::FETCH_ASSOC);
-    // 3-7. 결과가 없으면 false 반환
-    if ($maxCount === false) {
-      return false;
-    }
-    // 3-8. 최대 day_no 반환 (null이면 false 반환)
-    if ($maxCount['max_day_no'] === null) {
-      return false;
-    }
-    return (int)$maxCount['max_day_no'];
+    if ($stmt === false) return false;
+
+    $ok = $stmt->execute([':trip_id' => $tripId]);
+    if ($ok === false) return false;
+
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row === false) return false;
+
+    // TripDay 0건일 때 0을 반환해서 '첫 삽입'이 가능하게 한다
+    return $row['max_day_no'] === null ? 0 : (int)$row['max_day_no'];
   }
 
   // 4. (중간 삽입용) addDay 다음으로 day_no +1씩 밀어내는 메서드
@@ -248,26 +237,29 @@ class TripDaysRepository {
 
   // 6. trip의 day_count 업데이트 메서드
   public function updateTripDayCount(int $tripId) : bool {
-    // 6-1. sql 작성
-    $sql = "UPDATE Trip
-            SET day_count = :new_day_count + 1, 
-                updated_at = NOW()
-            WHERE trip_id = :trip_id";
-    // 6-2. 쿼리 준비
+    // TripDay의 실제 개수로 동기화
+    $sql = "UPDATE Trip t
+            SET t.day_count = (
+                  SELECT COUNT(*)
+                  FROM TripDay td
+                  WHERE td.trip_id = t.trip_id
+                ),
+                t.updated_at = NOW()
+            WHERE t.trip_id = :trip_id";
+
     $stmt = $this->pdo->prepare($sql);
-    // 6-3. 쿼리 준비 실패 시 false 반환
     if ($stmt === false) {
       return false;
     }
-    // 6-4. 쿼리 실행
-    $success = $stmt->execute([
-      ':trip_id'       => $tripId
-    ]);
-    // 6-5. 쿼리 실행 실패 시 false 반환
-    if ($success === false) {
+
+    $ok = $stmt->execute([':trip_id' => $tripId]);
+    if ($ok === false) {
+      // 에러 원인 로그 (헤더 안 깨지게 서버 로그로만)
+      $info = $stmt->errorInfo();
+      error_log('[TripDays] updateTripDayCount SQL ERROR: ' . var_export($info, true));
       return false;
     }
-    // 6-6. 성공 시 true 반환
+
     return true;
   }
 
@@ -290,53 +282,31 @@ class TripDaysRepository {
     // 7-5. 삽입할 dayNo 결정
     // - dayNo가 null 이면 제일 마지막에 삽입 (maxDayNo + 1)
     // - dayNo 값이 있으면 그 위치에 삽입 
-    $targetDayNo = $dayNo ?? ($maxDayNo + 1);
+    $targetDayNo = $dayNo !== null ? (int)$dayNo : ($maxDayNo + 1);
 
     // 7-6. dayNo가 1보다 작거나, (maxDayNo + 1)보다 크면 false 반환
     if ($targetDayNo < 1 || $targetDayNo > ($maxDayNo + 1)) {
       return false;
     }
 
-    // 7-7. 트레젝션 시작
-    $this->beginTransaction();
-    if (!$this->pdo->inTransaction()) {
-      return false;
-    }
-
-    // 7-8. dayNo가 maxDayNo + 1 보다 작은경우 (중간 삽입)
+    // 7-7. dayNo가 maxDayNo + 1 보다 작은경우 (중간 삽입)
     if ($targetDayNo <= $maxDayNo) {
-      // 7-9. 기존 dayNo 밀어내기 (shiftDayNos 사용)
+      // 7-8. 기존 dayNo 밀어내기 (shiftDayNos 사용)
       $shifted = $this->shiftDayNos($tripId, $targetDayNo);
-      // 7-10. 밀어내기 실패 시 롤백 후 false 반환
+      // 7-9. 밀어내기 실패 시  false 반환
       if ($shifted === false) {
-        $this->rollBack();
         return false;
       }
     }
 
-    // 7-11. tripday 삽입 (insertTripDay 사용)
+    // 7-10. tripday 삽입 (insertTripDay 사용)
     $newId = $this->insertTripDay($tripId, $targetDayNo, $memo);
-    // 7-12. 삽입 실패 시 롤백 후 false 반환
+    // 7-11. 삽입 실패 시 false 반환
     if ($newId === false) {
-      $this->rollBack();
       return false;
     }
 
-    // 7-13. trip의 day_count 업데이트 (updateTripDayCount 사용)
-    $updated = $this->updateTripDayCount($tripId);
-    // 7-14. 업데이트 실패 시 롤백 후 false 반환
-    if ($updated === false) {
-      $this->rollBack();
-      return false;
-    }
-
-    // 7-15. 커밋
-    $this->commit();
-    // 7-16. 커밋 실패시 false 반환
-    if (!$this->pdo->inTransaction()) {
-      return false;
-    }
-    // 7-17. 성공 시 삽입된 tripday ID 반환
+    // 7-12. 성공 시 삽입된 tripday ID 반환
     return $newId;
 
   }
