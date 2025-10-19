@@ -67,4 +67,37 @@ class TripDaysService {
     return $tripDay;
   }
 
+  // 7. 여행 일자 삭제 메서드
+  public function deleteTripDay(int $userId, int $tripId, int $dayNo): bool {
+    // 7-0. tripId가 userId 소유인지 확인
+    if (!$this -> tripDaysRepository -> isTripOwner($tripId, $userId)) {
+    
+      return false;
+    }
+
+    // 7-1. 트레젝션 시작
+    if (!$this -> tripDaysRepository -> beginTransaction()) {
+      return false;
+    }
+
+    // 7-2. 여행 일자 삭제
+    $deleted = $this -> tripDaysRepository ->  deleteTripDayById($tripId, $dayNo);
+
+    // 7-3. 삭제 실패 시 롤백 후 false 반환
+    if ($deleted === false) {
+      $this -> tripDaysRepository -> rollBack();
+      return false;
+    }
+
+    // 7-4. 커밋이 실패하면 롤백 후 false 반환
+    if (!$this -> tripDaysRepository -> commit()) {
+      $this -> tripDaysRepository -> rollBack();
+      return false;
+    }
+
+    // 7-5. 성공 시 true 반환
+    return true;
+  }
+  
+
 }
