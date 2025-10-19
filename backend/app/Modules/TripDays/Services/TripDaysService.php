@@ -18,7 +18,7 @@ class TripDaysService {
   }
 
   // 5. 여행 추가 메서드 
-  public function addTripDay(int $userId, int $tripId, int $dayNo): int|false {
+  public function addTripDay(int $userId, int $tripId, int $dayNo, ?string $memo = null): int|false {
     // 5-0. tripId가 userId 소유인지 확인
     if (!$this -> tripDaysRepository -> isTripOwner($tripId, $userId)) {
       return false;
@@ -29,10 +29,10 @@ class TripDaysService {
       return false;
     }
     // 5-2. 여행 일자 추가
-    $tripId = $this -> tripDaysRepository -> createTripDay($tripId, $dayNo);
+    $tripDayId = $this -> tripDaysRepository -> createTripDay($tripId, $dayNo, $memo,);
     
     // 5-3. 여행 일자 추가 실패 시 롤백 후 false 반환
-    if ($tripId === false) {
+    if ($tripDayId === false) {
       $this -> tripDaysRepository -> rollBack();
       return false;
     }
@@ -43,7 +43,7 @@ class TripDaysService {
       return false;
     }
     // 5-5. 성공 시 여행 일자 ID 반환
-    return $tripId;
+    return $tripDayId;
     
   }
 
