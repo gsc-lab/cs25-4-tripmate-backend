@@ -79,35 +79,89 @@ class ScheduleItemsController extends Controller {
   // 2. 일정 목록 조회 : GET /api/v1/trips/{trip_id}/days/{day_no}/items
   public function getScheduleItems(int $tripId, int $dayNo) {
 
-    // 1-1. trip_id가 없으면 400 반환
-    if (empty($tripId) || $tripId <= 0) {
+    // 2-1. 유효성 검증(trip_id)
+    $validationTripId = $this->validator->validateDay($tripId);
+    if ($validationTripId !== true) {
       return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
     }
-    // 1-2. day_no가 없으면 400 반환
-    if (empty($dayNo) || $dayNo <= 0) {
+    // 2-2. 유효성 검증(day_no)
+    $validationDayId = $this->validator->validateDayId($dayNo);
+    if ($validationDayId !== true) {
       return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
     }
 
-    // 1-3. 토큰 검증 및 user_id 추출
+    // 2-3. 토큰 검증 및 user_id 추출
     $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
-    // 1-4. 유효하지 않은 토큰일 시 에러 응답
+    // 2-4. 유효하지 않은 토큰일 시 에러 응답
     if (!$userId) {
         return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
     }
 
-    // 1-5. 일정 목록 조회 서비스 호출
+    // 2-5. 일정 목록 조회 서비스 호출
     $items = $this->scheduleItemsService->getScheduleItems(
       (int)$userId, 
       (int)$tripId, 
       (int)$dayNo
     );
 
-    // 1-6. 일정 목록 조회 실패 시 에러 응답
+    // 2-6. 일정 목록 조회 실패 시 에러 응답
     if ($items === false) {
       return $this->response->error('GET_SCHEDULE_ITEMS_FAILED', '일정 목록 조회에 실패했습니다.', 500);
     }
 
-    // 1-7. 일정 목록 조회 성공 시 응답 반환
+    // 2-7. 일정 목록 조회 성공 시 응답 반환
     return $this->response->success(['items' => $items],  200);
   }
+
+  // 3. 일정 부분 수정
+  // PATCH /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
+  public function updateScheduleItem(int $tripId, int $dayNo, int $itemId) {
+    // // 3-1. 유효성 검증(trip_id)
+    // $validationTripId = $this->validator->validateTripId($tripId);
+    // if ($validationTripId !== true) {
+    //   return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    // }
+    // // 3-2. 유효성 검증(day_no)
+    // $validationDayId = $this->validator->validateDayId($dayNo);
+    // if ($validationDayId !== true) {
+    //   return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
+    // }
+    // // 3-3. 유효성 검증(item_id)
+    // $validationItemId = $this->validator->validateDay($itemId);
+    // if ($validationItemId !== true) {
+    //   return $this->response->error('MISSING_ITEM_ID', 'item_id가 필요합니다.', 400);
+    // }
+
+    // 3-4. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 3-5. 유효하지 않은 토큰일 시 에러 응답
+    if (!$userId) {
+        return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
+    }
+
+    // 3-6. memo, visit_time 추출
+    $body = $this->request->body ?? [];
+    $visitTime = $body['visit_time'] ?? null;
+    $memo = $body['memo'] ?? null;
+
+    // 3-7. 일정 부분 수정 서비스 호출
+    $items = $this->scheduleItemsService->updateScheduleItem(
+      (int)$userId, 
+      (int)$tripId, 
+      (int)$itemId, 
+      (int)$dayNo, 
+      $visitTime, 
+      $memo
+    );
+
+    // 3-8. 일정 부분 수정 실패 시 에러 응답
+    if (!$items) {
+      return $this->response->error('UPDATE_SCHEDULE_ITEM_FAILED', '일정 부분 수정에 실패했습니다.', 500);
+    }
+
+    // 3-9. 일정 부분 수정 성공 시 응답 반환
+    return $this->response->success(['items' => $items],  200);
+
+}
+
 }
