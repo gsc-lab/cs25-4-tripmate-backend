@@ -191,4 +191,46 @@ class ScheduleItemsRepository {
       return $scheduleItemId;
     }
 
+    // 5. 일정 아이템 목록 조회 메서드
+    public function getScheduleItemsByTripDayId(int $tripDayId) : array|false {
+      // 5-1. SQL 작성
+      $sql = "SELECT 
+                item.schedule_item_id,
+                item.place_id,
+                item.seq_no,
+                item.visit_time,
+                item.memo,
+                place.name AS place_name,
+                place.address AS place_address,
+                place.lat AS place_lat,
+                place.lng AS place_lng
+              FROM 
+                ScheduleItem AS item
+              LEFT JOIN 
+                Place AS place ON item.place_id = place.place_id
+              WHERE 
+                item.trip_day_id = :trip_day_id
+              ORDER BY 
+                item.seq_no ASC";
+
+      // 5-2. 쿼리 준비
+      $stmt = $this->pdo->prepare($sql);
+      // 5-3. 쿼리 준비 실패시 false 반환
+      if ($stmt === false) {
+        return false;
+      }
+
+      // 5-4. 쿼리 실행
+      $ok = $stmt->execute([':trip_day_id' => $tripDayId]);
+      // 5-5. 쿼리 실행 실패시 false 반환
+      if ($ok === false) {
+        return false;
+      }
+
+      // 5-6. 결과 모두 조회
+      $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      // 5-7. 성공 시 결과 반환
+      return $items;
+    }
+
   }
