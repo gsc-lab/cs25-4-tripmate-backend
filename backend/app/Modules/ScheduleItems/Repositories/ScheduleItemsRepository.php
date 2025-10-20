@@ -394,7 +394,6 @@ class ScheduleItemsRepository {
     $findStmt = $this->pdo->prepare($findSql);
     // 9-3. 쿼리 준비 실패 시 false 반환
     if ($findStmt === false) {
-      error_log('prepare failed in deleteScheduleDayById');
       return false;
     }
 
@@ -406,7 +405,6 @@ class ScheduleItemsRepository {
     ]);
     // 9-5. 쿼리 실행 실패 시 false 반환
     if ($success === false) {
-      error_log('execute failed in deleteScheduleDayById');
       return false;
       }
 
@@ -414,7 +412,6 @@ class ScheduleItemsRepository {
     $dayIdSeqNo = $findStmt->fetch(PDO::FETCH_ASSOC);
     // 9-7. 조회 실패시 false 반환
     if ($dayIdSeqNo === false) {
-      error_log('fetch failed in deleteScheduleDayById');
       return false;
     }
 
@@ -427,7 +424,6 @@ class ScheduleItemsRepository {
     $deleted = $this->deleteScheduleItem($scheduleItemId);
     // 9-9. 일정 아이템 삭제 실패 시 false 반환
     if (!$deleted) {
-      error_log('deleteScheduleItem failed in deleteScheduleDayById');
       return false;
     }
 
@@ -435,7 +431,6 @@ class ScheduleItemsRepository {
     $reordered = $this->reorderSeqNosAfterDeletion($tripDayId , $deleteSeqNo);
     // 9-11. 재정렬 실패 시 false 반환
     if (!$reordered) {
-      error_log('reorderSeqNosAfterDeletion failed in deleteScheduleDayById');
       return false;
     }
 
