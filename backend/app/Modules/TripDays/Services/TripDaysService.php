@@ -98,6 +98,30 @@ class TripDaysService {
     // 7-5. 성공 시 true 반환
     return true;
   }
-  
 
+    // 8. 일차 목록 조회
+    public function daysListService($tripId) {
+        // db 전달
+        $result = $this->tripDaysRepository->listRepository($tripId);
+
+        return $result;
+    }
+
+    // 9. 노트 수정
+    public function noteService($tripId, $dayId, $memo) {
+        // db 전달
+        $result = $this->tripDaysRepository->noteRepository($tripId, $dayId, $memo);
+    
+        // 반환
+        return $result;
+    }
+
+    // 10. 일자 재배치
+    public function relocationDaysService($tripId, $orders) {
+        // db 전달
+        $result = $this->tripDaysRepository->relocationDaysRepository($tripId, $orders);
+    
+        // 반환
+        return $result;
+    }
 }
