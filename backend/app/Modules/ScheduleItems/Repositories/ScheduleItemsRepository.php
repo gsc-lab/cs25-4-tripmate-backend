@@ -314,4 +314,133 @@ class ScheduleItemsRepository {
       return $updatedItem;
     }
 
+  // 7. 일정 아이템 삭제 메서드 
+  public function deleteScheduleItem(int $scheduleItemId) : bool {
+    // 7-1. sql 작성
+    $sql = "
+        DELETE FROM ScheduleItem
+        WHERE schedule_item_id = :schedule_item_id
+        ";
+
+    // 7-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+
+    // 7-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+
+    // 7-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':schedule_item_id' => $scheduleItemId
+    ]);
+
+    // 7-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+
+    // 7-6. 성공 시 true 반환
+    return true;
+  }
+
+  // 8. seq_no 재정렬 메서드 (
+  // seq_no > :deleteSeqNo 인 schedule_item들의 seq_no를 -1씩 감소
+  public function reorderSeqNosAfterDeletion(int $tripDayId, int $deleteSeqNo) : bool {
+    // 8-1. sql 작성
+    $sql = "
+        UPDATE ScheduleItem
+        SET seq_no = seq_no - 1
+        WHERE trip_day_id = :trip_day_id AND seq_no > :delete_seq_no
+        ";
+
+    // 8-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+
+    // 8-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+
+    // 8-4. 쿼리 실행
+    $success = $stmt->execute([
+      ':trip_day_id' => $tripDayId,
+      ':delete_seq_no' => $deleteSeqNo
+    ]);
+
+    // 8-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      return false;
+    }
+
+    // 8-6. 성공 시 true 반환
+    return true;
+  }
+
+  // 9. 일정 아이템 삭제 메인 메서드
+  public function deleteScheduleDayById(int $tripId, int $dayNo, int $scheduleItemId) : bool {
+    // 9-1. 삭제 대상 조회 (trip_day_id / seq_no)
+    $findSql = "
+      SELECT si.trip_day_id, si.seq_no
+      FROM ScheduleItem si
+      JOIN TripDay td ON td.trip_day_id = si.trip_day_id
+      JOIN Trip t     ON t.trip_id = td.trip_id
+      WHERE t.trip_id = :trip_id
+        AND td.day_no = :day_no
+        AND si.schedule_item_id = :schedule_item_id
+      ";
+    
+    // 9-2. 쿼리 준비
+    $findStmt = $this->pdo->prepare($findSql);
+    // 9-3. 쿼리 준비 실패 시 false 반환
+    if ($findStmt === false) {
+      error_log('prepare failed in deleteScheduleDayById');
+      return false;
+    }
+
+    // 9-4. 쿼리 실행
+    $success = $findStmt->execute([
+      ':trip_id' => $tripId,
+      ':day_no' => $dayNo,
+      ':schedule_item_id' => $scheduleItemId
+    ]);
+    // 9-5. 쿼리 실행 실패 시 false 반환
+    if ($success === false) {
+      error_log('execute failed in deleteScheduleDayById');
+      return false;
+      }
+
+    // 9-6. 조회 결과 가져오기
+    $dayIdSeqNo = $findStmt->fetch(PDO::FETCH_ASSOC);
+    // 9-7. 조회 실패시 false 반환
+    if ($dayIdSeqNo === false) {
+      error_log('fetch failed in deleteScheduleDayById');
+      return false;
+    }
+
+    // 9-8. trip_day_id 추출
+    $tripDayId = (int)$dayIdSeqNo['trip_day_id'];
+    // 9-9. seq_no 추출
+    $deleteSeqNo = (int)$dayIdSeqNo['seq_no'];
+
+    // 9-8. 일정 아이템 삭제 
+    $deleted = $this->deleteScheduleItem($scheduleItemId);
+    // 9-9. 일정 아이템 삭제 실패 시 false 반환
+    if (!$deleted) {
+      error_log('deleteScheduleItem failed in deleteScheduleDayById');
+      return false;
+    }
+
+    // 9-10. seq_no 재정렬
+    $reordered = $this->reorderSeqNosAfterDeletion($tripDayId , $deleteSeqNo);
+    // 9-11. 재정렬 실패 시 false 반환
+    if (!$reordered) {
+      error_log('reorderSeqNosAfterDeletion failed in deleteScheduleDayById');
+      return false;
+    }
+
+    // 9-12. 성공 시 true 반환
+    return true;
+  }
+
 }
