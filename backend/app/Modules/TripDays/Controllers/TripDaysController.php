@@ -119,7 +119,7 @@ class TripDaysController extends Controller {
         $userId = amw::tokenResponse($this->request);
 
         // 서비스 전달
-        $result = $this->tripDaysService->daysListService($tripId);
+        $result = $this->tripDaysService->daysListService($tripId, $userId);
     
         if ($result == "DB_SELECT_FAILD") {
             $this->error($result, "DB 조회에 실패하였습니다.");
@@ -145,7 +145,7 @@ class TripDaysController extends Controller {
 
         $memo = $data['memo'];
 
-        $result = $this->tripDaysService->noteService($tripId, $dayId, $memo);
+        $result = $this->tripDaysService->noteService($tripId, $dayId, $memo, $userId);
     
         if($result == "UPDATE_FAIL") {
             $this->error($result, "메모 업데이트에 실패했습니다.");
@@ -207,7 +207,7 @@ class TripDaysController extends Controller {
         $orders = $data['orders'];
 
         // 서비스 전달
-        $result = $this->tripDaysService->relocationDaysService($tripId, $orders);
+        $result = $this->tripDaysService->relocationDaysService($tripId, $orders, $userId);
     
         if($result == "SELECT_FAIL") {
             $this->error($result, "값 조회에 실패했습니다.");
