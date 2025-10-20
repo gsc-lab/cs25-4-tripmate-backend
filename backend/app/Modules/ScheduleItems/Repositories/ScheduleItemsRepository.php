@@ -5,6 +5,7 @@ namespace Tripmate\Backend\Modules\ScheduleItems\Repositories;
 // 2. DB 클래스 로드 및 pdo 사용
 use Tripmate\Backend\Core\DB;
 use PDO;
+use Respect\Validation\Rules\IntVal;
 
 // 3. ScheduleItemsRepository 클래스 정의
 class ScheduleItemsRepository {
@@ -233,4 +234,84 @@ class ScheduleItemsRepository {
       return $items;
     }
 
-  }
+
+    // 6. 일정 아이템 부분 수정메서드 (visittime, memo)
+    public function updateScheduleItem(
+        int $scheduleItemId,
+        ?string $visitTime,
+        ?string $memo
+    ) : array|false {
+      // 6-1. 빈 문자열은 null로 변환
+      if ($visitTime === '') {
+        $visitTime = null;
+      }
+      if ($memo === '') {
+        $memo = null;
+      }
+
+      // 6-2. SQL 작성
+      $sql = "UPDATE 
+                ScheduleItem 
+              SET 
+                visit_time = :visit_time,
+                memo = :memo,
+                updated_at = NOW()
+              WHERE 
+                schedule_item_id = :schedule_item_id";
+
+      // 6-3. 쿼리 준비
+      $stmt = $this->pdo->prepare($sql);
+      // 6-4. 쿼리 준비 실패시 false 반환
+      if ($stmt === false) {
+        return false;
+      }
+
+      // 6-5. 쿼리 실행
+      $items = $stmt->execute([
+        ':visit_time' => $visitTime,
+        ':memo' => $memo,
+        ':schedule_item_id' => $scheduleItemId,
+      ]);
+
+      // 6-6. 쿼리 실행 실패시 false 반환
+      if ($items === false) {
+        return false;
+      }
+
+      // 6-7. 성공 시 수정 된 일정 재조회 후 반환
+      $selectSql = "SELECT 
+                      schedule_item_id,
+                      trip_day_id,
+                      place_id,
+                      seq_no,
+                      visit_time,
+                      memo,
+                      updated_at
+                    FROM 
+                      ScheduleItem
+                    WHERE 
+                      schedule_item_id = :schedule_item_id";
+    
+      // 6-8. 쿼리 준비
+      $selectStmt = $this->pdo->prepare($selectSql);
+      // 6-9. 쿼리 준비 실패시 false 반환
+      if ($selectStmt === false) {
+        return false;
+      }
+      // 6-10. 쿼리 실행
+      $ok = $selectStmt->execute([':schedule_item_id' => $scheduleItemId]);
+
+      // 6-11. 쿼리 실행 실패시 false 반환
+      if ($ok === false) {
+        return false;
+    }
+      // 6-12. 결과 조회 실패시 false 반환
+      $updatedItem = $selectStmt->fetch(PDO::FETCH_ASSOC);
+      if ($updatedItem === false) {
+        return false;
+      }
+      // 6-13. 성공 시 수정된 일정 아이템 반환
+      return $updatedItem;
+    }
+
+}
