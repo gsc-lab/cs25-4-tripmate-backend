@@ -100,26 +100,26 @@ class TripDaysService {
   }
 
     // 8. 일차 목록 조회
-    public function daysListService($tripId) {
+    public function daysListService($tripId, $userId) {
         // db 전달
-        $result = $this->tripDaysRepository->listRepository($tripId);
+        $result = $this->tripDaysRepository->listRepository($tripId, $userId);
 
         return $result;
     }
 
     // 9. 노트 수정
-    public function noteService($tripId, $dayId, $memo) {
+    public function noteService($tripId, $dayId, $memo, $userId) {
         // db 전달
-        $result = $this->tripDaysRepository->noteRepository($tripId, $dayId, $memo);
+        $result = $this->tripDaysRepository->noteRepository($tripId, $dayId, $memo, $userId);
     
         // 반환
         return $result;
     }
 
     // 10. 일자 재배치
-    public function relocationDaysService($tripId, $orders) {
+    public function relocationDaysService($tripId, $orders, $userId) {
         // db 전달
-        $result = $this->tripDaysRepository->relocationDaysRepository($tripId, $orders);
+        $result = $this->tripDaysRepository->relocationDaysRepository($tripId, $orders, $userId);
     
         // 반환
         return $result;
