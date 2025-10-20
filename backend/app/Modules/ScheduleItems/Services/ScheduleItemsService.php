@@ -152,4 +152,50 @@ class ScheduleItemsService {
     return $items;
   }
 
+  // 4. 일정 아이템 삭제 메서드
+  public function deleteScheduleItem(int $userId, int $tripId, int $dayNo, int $itemId) : bool {
+    // 4-1 트랜잭션 시작
+    if (!$this->scheduleItemsRepository->beginTransaction()) {
+      return false;
+    }
+
+    // 4-2 trip_id + day_no로 trip_day_id 조회
+    $tripDayId = $this->tripDaysRepository->getTripDayId($tripId, $dayNo);
+    // 4-3 trip_day_id 없으면 롤백 후 false 반환
+    if ($tripDayId === null) {
+      error_log('tripDayId not found');
+      $this->scheduleItemsRepository->rollBack();
+      return false;
+    }
+
+    // 4-4 소유권 확인
+    $isOwner = $this->tripDaysRepository->isTripOwner($tripId, $userId);
+    // 4-5 소유권 없으면 롤백 후 false 반환
+    if (!$isOwner) {
+      error_log('not owner');
+      $this->scheduleItemsRepository->rollBack();
+      return false;
+    }
+
+    // 4-6 일정 아이템 삭제 쿼리 실행
+    $deleted = $this->scheduleItemsRepository->deleteScheduleDayById($tripId, $dayNo, $itemId);
+    // 4-7 일정 아이템 삭제 실패 시 롤백 후 false 반환
+    if (!$deleted) {
+      error_log('delete failed');
+      $this->scheduleItemsRepository->rollBack();
+      return false;
+    }
+
+    // 4-8 커밋 실행
+    if (!$this->scheduleItemsRepository->commit()) {
+      error_log('commit failed');
+      // 4-9 커밋 실패 시 롤백 후 false 반환
+      $this->scheduleItemsRepository->rollBack();
+      return false;
+    }
+
+    // 4-10 일정 아이템 삭제 성공 시 true 반환
+    return true;
+  }
+
 }
