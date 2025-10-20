@@ -76,4 +76,38 @@ class ScheduleItemsController extends Controller {
     return $this->response->success(['item_id' => $itemId],  201);
   }
 
+  // 2. 일정 목록 조회 : GET /api/v1/trips/{trip_id}/days/{day_no}/items
+  public function getScheduleItems(int $tripId, int $dayNo) {
+
+    // 1-1. trip_id가 없으면 400 반환
+    if (empty($tripId) || $tripId <= 0) {
+      return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    }
+    // 1-2. day_no가 없으면 400 반환
+    if (empty($dayNo) || $dayNo <= 0) {
+      return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
+    }
+
+    // 1-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 1-4. 유효하지 않은 토큰일 시 에러 응답
+    if (!$userId) {
+        return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
+    }
+
+    // 1-5. 일정 목록 조회 서비스 호출
+    $items = $this->scheduleItemsService->getScheduleItems(
+      (int)$userId, 
+      (int)$tripId, 
+      (int)$dayNo
+    );
+
+    // 1-6. 일정 목록 조회 실패 시 에러 응답
+    if ($items === false) {
+      return $this->response->error('GET_SCHEDULE_ITEMS_FAILED', '일정 목록 조회에 실패했습니다.', 500);
+    }
+
+    // 1-7. 일정 목록 조회 성공 시 응답 반환
+    return $this->response->success(['items' => $items],  200);
+  }
 }
