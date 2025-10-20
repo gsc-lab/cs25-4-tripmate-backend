@@ -161,7 +161,50 @@ class ScheduleItemsController extends Controller {
 
     // 3-9. 일정 부분 수정 성공 시 응답 반환
     return $this->response->success(['items' => $items],  200);
+  } 
 
-}
+  // 4. 일정 삭제 
+  // DELETE /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
+  public function deleteScheduleItem(int $tripId, int $dayNo, int $itemId) {
+    // // 4-1. 유효성 검증(trip_id)
+    // $validationTripId = $this->validator->validateTripId($tripId);
+    // if ($validationTripId !== true) {
+    //   return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    // }
+    // // 4-2. 유효성 검증(day_no)
+    // $validationDayId = $this->validator->validateDayId($dayNo);
+    // if ($validationDayId !== true) {
+    //   return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
+    // }
+    // // 4-3. 유효성 검증(item_id)
+    // $validationItemId = $this->validator->validateDay($itemId);
+    // if ($validationItemId !== true) {
+    //   return $this->response->error('MISSING_ITEM_ID', 'item_id가 필요합니다.', 400);
+    // }
+
+    // 4-4. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 4-5. 유효하지 않은 토큰일 시 에러 응답
+    if (!$userId) {
+        return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
+    }
+
+    // 4-6. 일정 삭제 서비스 호출
+    $deleted = $this->scheduleItemsService->deleteScheduleItem(
+      (int)$userId, 
+      (int)$tripId, 
+      (int)$dayNo, 
+      (int)$itemId
+    );
+
+    // 4-7. 일정 삭제 실패 시 에러 응답
+    if ($deleted === false) {
+      return $this->response->error('DELETE_SCHEDULE_ITEM_FAILED', '일정 삭제에 실패했습니다.', 500);
+    }
+
+    // 4-8. 일정 삭제 성공 시 응답 반환
+    return $this->response->success(['deleted' => $deleted], 200);
+  }
+
 
 }
