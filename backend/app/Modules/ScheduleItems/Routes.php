@@ -39,6 +39,6 @@ return function(\AltoRouter $router, Request $request, Response $response) {
   $router->map(
     'POST',
     '/api/v1/trips/[i:trip_id]/days/[i:day_no]/items:reorder',
-    [new ScheduleItemsController($request, $response), 'reorderScheduleItems']
+    [new ScheduleItemsController($request, $response), 'reorderSingleScheduleItem']
   );
 };
