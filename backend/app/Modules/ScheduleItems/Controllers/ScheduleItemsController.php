@@ -206,5 +206,50 @@ class ScheduleItemsController extends Controller {
     return $this->response->success(['deleted' => $deleted], 200);
   }
 
+  // 5. 일정 재배치
+  // POST /api/v1/trips/{trip_id}/days/{day_no}/items:reorder
+  public function reorderSingleScheduleItem(int $tripId, int $dayNo) {
+    // // 5-1. 유효성 검증(trip_id)
+    // $validationTripId = $this->validator->validateTripId($tripId);
+    // if ($validationTripId !== true) {
+    //   return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    // }
+    // // 5-2. 유효성 검증(day_no)
+    // $validationDayId = $this->validator->validateDayId($dayNo);
+    // if ($validationDayId !== true) {
+    //   return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
+    // }
+
+    // 5-3. 토큰 검증 및 user_id 추출
+    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 5-4. 유효하지 않은 토큰일 시 에러 응답
+    if (!$userId) {
+        return $this->response->error('UNAUTHORIZED', '유효하지 않은 토큰입니다.', 401);
+    }
+
+    // 5-5. 요청 데이터에서 item_ids 및 new_seq_no 추출 없으면 0
+    $body = $this->request->body ?? [];
+    $itemId = isset($body['item_id']) ? (int)$body['item_id'] : 0;
+    $newSeqNo = isset($body['new_seq_no']) ? (int)$body['new_seq_no'] : 0;
+    error_log("Reorder Request - UserID: $userId, TripID: $tripId, DayNo: $dayNo, ItemID: $itemId, NewSeqNo: $newSeqNo");
+
+    // 5-6. 일정 재배치 서비스 호출
+    $reordered = $this->scheduleItemsService->reorderSingleScheduleItem(
+      (int)$userId, 
+      (int)$tripId, 
+      (int)$dayNo, 
+      $itemId,
+      $newSeqNo
+
+    );
+
+    // 5-7. 일정 재배치 실패 시 에러 응답
+    if ($reordered === false) {
+      return $this->response->error('REORDER_SCHEDULE_ITEMS_FAILED', '일정 재배치에 실패했습니다.', 500);
+    }
+
+    // 5-8. 일정 재배치 성공 시 응답 반환
+    return $this->response->success(['reordered' => $reordered],  200);
+  }
 
 }
