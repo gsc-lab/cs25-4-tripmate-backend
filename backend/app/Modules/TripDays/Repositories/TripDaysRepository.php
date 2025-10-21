@@ -491,7 +491,7 @@ class TripDaysRepository {
         $this->pdo->beginTransaction();
 
         // 유저 아이디 검증
-        $userResult = isTripOwner(int $tripId, int $userId);
+        $userResult = $this->isTripOwner($tripId, $userId);
 
         if ($userResult !== true) {
             return "NOT_USER_TRIP";
@@ -523,7 +523,7 @@ class TripDaysRepository {
     // 일차 메모 수정
     public function noteRepository($tripId, $dayId, $memo, $userId) {
         // 유저 아이디 검증
-        $userResult = isTripOwner(int $tripId, int $userId);
+        $userResult = $this->isTripOwner($tripId, $userId);
 
         if ($userResult !== true) {
             return "NOT_USER_TRIP";
@@ -560,7 +560,7 @@ class TripDaysRepository {
     // 일차 재배치
     public function relocationDaysRepository($tripId, $orders, $userId) {
         // 유저 아이디 검증
-        $userResult = isTripOwner(int $tripId, int $userId);
+        $userResult = $this->isTripOwner($tripId, $userId);
 
         if ($userResult !== true) {
             return "NOT_USER_TRIP";
