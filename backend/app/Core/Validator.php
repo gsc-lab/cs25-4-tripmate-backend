@@ -87,7 +87,7 @@
                 v::keySet(
                     v::key('day_no', v::notEmpty()->intVal()->positive(), true),
                     v::key('new_day_no', v::notEmpty()->intVal()->positive(), true)
-                )
+                ), true
             ));
 
             return $this->errorCheck($validation, $date);
@@ -135,7 +135,7 @@
             v::keySet(
                 v::key('item_id', v::intVal()->positive()->notEmpty(), true),
                 v::key('new_seq_no', v::intVal()->positive()->notEmpty(), true)
-            )
+            ), true
         ));
 
             return $this->errorCheck($validation, $date);
