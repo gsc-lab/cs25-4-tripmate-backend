@@ -116,7 +116,7 @@ class TripDaysController extends Controller {
     // 일차 목록 조회
     public function getTripDays(int $tripId) {
         // 토큰 검증
-        $userId = amw::tokenResponse($this->request);
+        $userId = AuthMiddleware::tokenResponse($this->request);
 
         // 서비스 전달
         $result = $this->tripDaysService->daysListService($tripId, $userId);
@@ -133,13 +133,13 @@ class TripDaysController extends Controller {
     // 일차 메모 속성 수정
     public function updateTripDay(int $tripId, int $dayId) {
         // 토큰 검증
-        $userId = amw::tokenResponse($this->request);
+        $userId = AuthMiddleware::tokenResponse($this->request);
     
         // 데이터 가져오기
         $data = $this->request->body;
 
         // 유효성 검증
-        if ($this->validator->validateMemo($data) === false) {
+        if ($this->validator->validateMemo($data) !== true) {
             $this->error("VALIDATION_ERROR", "입력값이 유효하지 않습니다.");
         }
 
@@ -195,7 +195,7 @@ class TripDaysController extends Controller {
     // 일차 재배치
     public function reorderTripDays(int $tripId) {
         // 토큰 검증
-        $userId = amw::tokenResponse($this->request);
+        $userId = AuthMiddleware::tokenResponse($this->request);
 
         // 본문 데이터 꺼내기
         $data = $this->request->body;
