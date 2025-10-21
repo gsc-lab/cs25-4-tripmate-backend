@@ -51,7 +51,7 @@
         public function validateTrip(array $date) {
             // title, region_id, start/end_date 검증
             $validation = v::key('title', v::length(1, 100)->notEmpty(), true)
-                        -> key('region_id', v::intVal()->notEmpty(), true)
+                        -> key('region_id', v::intVal()->positive()->notEmpty(), true)
                         -> key('start_date', v::date()->notEmpty(), true)
                         -> key('end_date', v::date()->notEmpty(), true);
 
@@ -61,7 +61,7 @@
         // 일차 속성(메모) 수정 유효성 검증
         public function validateMemo(array $date) {
             // memo 검증
-            $validation = v::key('memo', v::length(null, 255), false);
+            $validation = v::key('memo', v::length(null, 255)->notEmpty(), true);
 
             return $this->errorCheck($validation, $date);
         }
@@ -75,7 +75,7 @@
             }
 
             // day_no 검증
-            $validation = v::key('day_no', v::intVal()->notEmpty(), true);
+            $validation = v::key('day_no', v::intVal()->positive()->notEmpty(), true);
             
             return $this->errorCheck($validation, $date);
         }
@@ -83,11 +83,11 @@
         // 일차 재배치 유효성 검증
         public function validateDayRelocation(array $date) {
             // orders 배열 검증
-            $validation = v::key('orders', v::arrayType()->each(
+            $validation = v::key('orders', v::arrayType()->notEmpty()->each(
                 v::keySet(
-                    v::key('day_no', v::notEmpty()->intVal(), true),
-                    v::key('new_day_no', v::notEmpty()->intVal(), true)
-                )
+                    v::key('day_no', v::notEmpty()->intVal()->positive(), true),
+                    v::key('new_day_no', v::notEmpty()->intVal()->positive(), true)
+                ), true
             ));
 
             return $this->errorCheck($validation, $date);
@@ -108,43 +108,43 @@
         }
 
         // 일정 아이템 수정 유효성 검증
-        public function validateAddPlace(array $date) {
+        public function validateEditItem(array $date) {
             $validation = v::key('visit_time', v::dateTime()->notEmpty(), true)
-                    -> key('seq_no', v::intVal()->notEmpty(), true);
+                    -> key('seq_no', v::intVal()->positive()->notEmpty(), true);
 
             return $this->errorCheck($validation, $date);
         }
 
         // 일정 아이템 추가 유형성 검증
-        public function validateRelocation(array $date) {
+        public function validateAddItem(array $date) {
             // 시간 및 순서 검증
-            $result = $this->validateAddPlace($date);
+            $result = $this->validateEditItem($date);
             if ($result !== true) {
                 return $result;
             }
 
             // 일정 아이템 검증
-            $validation = v::key('place_id', v::notEmpty()->intVal(), true);
+            $validation = v::key('place_id', v::notEmpty()->intVal()->positive(), true);
 
             return $this->errorCheck($validation, $date);
         }
 
         // 일정 아이템 순서 재배치 유효성 검증
         public function validateRelocationItem(array $date) {
-            $validation = v::key('orders', v::arrayType()->each(
+            $validation = v::key('orders', v::arrayType()->notEmpty()->each(
             v::keySet(
-                v::key('item_id', v::intVal()->notEmpty(), true),
-                v::key('new_seq_no', v::intVal()->notEmpty(), true)
-            )
+                v::key('item_id', v::intVal()->positive()->notEmpty(), true),
+                v::key('new_seq_no', v::intVal()->positive()->notEmpty(), true)
+            ), true
         ));
 
             return $this->errorCheck($validation, $date);
         }
 
         /**  @param  */
-        public function validateDay($date) {
+        public function validateItemId($date) {
             // 일정 아이템 id 검증
-            $validation = v::key('item_id', v::notEmpty()->intVal(), true);
+            $validation = v::notEmpty()->intVal()->positive();
 
             return $this->errorCheck($validation, $date);
         }
@@ -152,15 +152,15 @@
         /**  @param  */
         public function validatePlaceId($date) {
             // 장소 id 검증
-            $validation = v::key('place_id', v::notEmpty()->intVal(), true);
+            $validation = v::notEmpty()->intVal()->positive();
 
             return $this->errorCheck($validation, $date);
         }
         
         /**  @param  */
-        public function validateDayId($date) {
+        public function validateDayNo($date) {
             // 일차 id 검증
-            $validation = v::key('day_no', v::notEmpty()->intVal(), true);
+            $validation = v::notEmpty()->intVal()->positive();
 
             return $this->errorCheck($validation, $date);
         }
@@ -168,7 +168,7 @@
         /**  @param  */
         public function validateTripId($date) {
             // 여행 생성 id
-            $validation = v::key('trip_id', v::notEmpty()->intVal(), true);
+            $validation = v::notEmpty()->intVal()->positive();
 
             return $this->errorCheck($validation, $date);
         }
