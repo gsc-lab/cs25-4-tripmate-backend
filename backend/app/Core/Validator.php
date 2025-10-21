@@ -61,7 +61,7 @@
         // 일차 속성(메모) 수정 유효성 검증
         public function validateMemo(array $date) {
             // memo 검증
-            $validation = v::key('memo', v::length(null, 255)->notEmpty(), false);
+            $validation = v::key('memo', v::length(null, 255)->notEmpty(), true);
 
             return $this->errorCheck($validation, $date);
         }
