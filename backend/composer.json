@@ -7,7 +7,7 @@
         }
     },
     "require": {
-        "respect/validation": "^2.2",
+        "respect/validation": "^2.4",
         "altorouter/altorouter": "^2.0",
         "firebase/php-jwt": "^6.11",
         "vlucas/phpdotenv": "^5.6"
