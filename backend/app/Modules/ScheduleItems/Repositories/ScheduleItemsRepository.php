@@ -49,7 +49,7 @@ class ScheduleItemsRepository {
     }
 
     // 1. tripday 존재 확인 + 잠금 (sql_no 중복 방지)
-    public function lookTripDay(int $tripDayId) : bool {
+    public function lockTripDay(int $tripDayId) : bool {
       // 1-1 SQL 작성 (부모 trip_days 테이블 잠금)
       $sql = "SELECT trip_day_id 
               FROM TripDay 
@@ -165,7 +165,7 @@ class ScheduleItemsRepository {
         ?string $memo
     ) : int|false {
       // 4-1. trip_day 존재 확인 + 잠금
-      $exists = $this->lookTripDay($tripDayId);
+      $exists = $this->lockTripDay($tripDayId);
       if ($exists === false) {
         return false;
       }
@@ -438,4 +438,284 @@ class ScheduleItemsRepository {
     return true;
   }
 
+  // 10. 같은 tripday의 scheduleitem 잠금 메서드
+  public function lockScheduleItems(int $tripDayId) : bool {
+    // 10-1 SQL 작성 (부모 trip_days 테이블 잠금)
+    $sql = "SELECT schedule_item_id 
+            FROM ScheduleItem 
+            WHERE trip_day_id= :trip_day_id 
+            FOR UPDATE";
+
+    // 10-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 10-3. 쿼리 준비 실패시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+    // 10-4. 쿼리 실행
+    $ok = $stmt->execute([':trip_day_id' => $tripDayId]);
+    // 10-5. 쿼리 실행 실패시 false 반환
+    if ($ok === false) {
+      return false;
+    }
+    // 10-6 . 성공 시 true 반환
+    return true;
+  }
+
+  // 11. 특정 item이 속한 trip_day_id 조회 메서드
+  public function getTripDayIdByItemId(int $scheduleItemId) : int|false {
+    // 11-1 SQL 작성
+    $sql = "SELECT trip_day_id 
+            FROM ScheduleItem 
+            WHERE schedule_item_id = :schedule_item_id";
+
+    // 11-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 11-3. 쿼리 준비 실패시 false 반환
+    if ($stmt === false) {
+      error_log("getTripDayIdByItemId: prepare 실패");
+      return false;
+    }
+    // 11-4. 쿼리 실행
+    $ok = $stmt->execute([':schedule_item_id' => $scheduleItemId]);
+    // 11-5. 쿼리 실행 실패시 false 반환
+    if ($ok === false) {
+      error_log("getTripDayIdByItemId: execute 실패");
+      return false;
+    }
+    // 11-6. 결과 조회 실패시 false 반환
+    $tripDayId = $stmt->fetchColumn();
+    if ($tripDayId === false) {
+      error_log("getTripDayIdByItemId: fetch 실패");
+      return false;
+    }
+    // 11-7. 성공 시 trip_day_id 반환
+    return (int)$tripDayId;
+  }
+  
+  // 12. 특정 item의 trip_id, seq_no 잠금 조회 메서드
+  public function lockTripIdAndSeqNoByItemId(int $scheduleItemId) : array|false {
+    // 12-1 SQL 작성
+    $sql = "SELECT trip_day_id, seq_no 
+            FROM ScheduleItem 
+            WHERE schedule_item_id = :schedule_item_id
+            FOR UPDATE";
+  
+    // 12-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 12-3. 쿼리 준비 실패시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+
+    // 12-4. 쿼리 실행
+    $ok = $stmt->execute([':schedule_item_id' => $scheduleItemId]);
+    // 12-5. 쿼리 실행 실패시 false 반환
+    if ($ok === false) {
+      return false;
+    }
+
+    // 12-6. 결과 조회 실패시 false 반환
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result === false) {
+      return false;
+    }
+
+    // 12-7. 성공 시 trip_day_id, seq_no 반환
+    return [
+      'trip_day_id' => (int)$result['trip_day_id'],
+      'seq_no' => (int)$result['seq_no']
+    ];
+  }
+
+  // 13. 단일 item 이동을 위한 이동 메서드
+  public function shiftScheduleItemSeqNo(
+    int $tripDayId, // trip_day_id
+    int $fromSeqNo, // 이동 전 seq_no
+    int $toSeqNo, // 이동 후 seq_no
+    int $moveItemId // 이동 대상 schedule_item_id
+    ) : bool {
+    // 13-1. 이동 방향에 따른 SQL 작성
+    if ($fromSeqNo < $toSeqNo) {
+      // 13-2. 아래로 이동 시
+      $sql = "
+        UPDATE ScheduleItem
+        SET seq_no = seq_no - 1
+        WHERE trip_day_id = :trip_day_id
+          AND seq_no > :from_seq_no
+          AND seq_no <= :new_seq_no
+          AND schedule_item_id <> :move_item_id
+      ";
+      $params = [
+        ':trip_day_id' => $tripDayId,
+        ':from_seq_no' => $fromSeqNo,
+        ':new_seq_no' => $toSeqNo,
+        ':move_item_id' => $moveItemId
+      ];
+    } else {
+      // 13-3. 위로 이동 시
+      $sql = "
+        UPDATE ScheduleItem
+        SET seq_no = seq_no + 1
+        WHERE trip_day_id = :trip_day_id
+          AND seq_no >= :new_seq_no
+          AND seq_no < :from_seq_no
+          AND schedule_item_id <> :move_item_id
+      ";
+      $params = [
+        ':trip_day_id' => $tripDayId,
+        ':from_seq_no' => $fromSeqNo,
+        ':new_seq_no' => $toSeqNo,
+        ':move_item_id' => $moveItemId
+      ];
+    }
+    error_log("shiftScheduleItemSeqNo: SQL - " . $sql);
+
+    // 13-4. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 13-5. 쿼리 준비 실패시 false 반환
+    if ($stmt === false) {
+      error_log("shiftScheduleItemSeqNo: prepare 실패");
+      return false;
+    } 
+
+    // 13-6. 쿼리 실행
+    $success = $stmt->execute($params);
+    // 13-7. 쿼리 실행 실패시 false 반환
+    if ($success === false) {
+      error_log("shiftScheduleItemSeqNo: execute 실패");
+      return false;
+    }
+
+    // 13-8. 성공 시 true 반환
+    return true;
+  }
+
+  // 14. 단일 일정아이템 seq_no 업데이트 메서드
+  public function updateItemSeqNo(int $scheduleItemId, int $newSeqNo) : bool {
+    // 14-1. SQL 작성
+    $sql = "UPDATE ScheduleItem
+            SET seq_no = :seq_no, updated_at = NOW()
+            WHERE schedule_item_id = :schedule_item_id";
+    // 14-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 14-3. 쿼리 준비 실패 시 false 반환
+    if ($stmt === false) {
+      error_log("updateItemSeqNo: prepare 실패");
+      return false;
+    }
+    // 14-4. 쿼리 실행
+    $ok = $stmt->execute([
+      ':seq_no' => $newSeqNo,
+      ':schedule_item_id' => $scheduleItemId,
+    ]);
+    // 14-5. 쿼리 실행 실패 시 false 반환
+    if ($ok === false) {
+      error_log("updateItemSeqNo: execute 실패");
+      return false;
+    }
+    // 14-6. 성공 시 true 반환
+    return true;
+  }
+
+  // 15. 단일 일정아이템 재배치 메인 메서드
+  public function reorderSingleScheduleItem(int $scheduleItemId, int $newSeqNo) : array|bool {
+    // 15-1. 일정아이템의 trip_day_id, 현재 seq_no 잠금 조회
+    $itemInfo = $this->lockTripIdAndSeqNoByItemId($scheduleItemId);
+    // 15-2. 조회 실패 시 false 반환
+    if ($itemInfo === false) {
+      error_log("일정아이템의 trip_day_id, 현재 seq_no 잠금 조회 실패");
+      return false;
+    }
+    // 15-3. trip_day_id, 현재 seq_no 추출
+    $tripDayId = $itemInfo['trip_day_id'];
+    $oldSeqNo = $itemInfo['seq_no'];
+
+    // 15-4. 같은 tripday의 scheduleitem 잠금
+    $locked = $this->lockScheduleItems($tripDayId);
+    // 15-5. 잠금 실패 시 false 반환
+    if ($locked === false) {
+      error_log("같은 trip_day의 scheduleitem 잠금 실패");
+      return false;
+    }
+
+    // 15-6. new_seq_no가 old_seq_no와 같으면 그대로 목록 반환
+    if ($newSeqNo === $oldSeqNo) {
+      $items = $this->getScheduleItemsByTripDayId($tripDayId);
+      // 15-7. 업데이트 실패 시 false 반환
+      if ($items === false) {
+        error_log("일정아이템 목록 조회 실패");
+        return false;
+      }
+      return $items;
+    }
+
+    // 15-8. 이동 대상이 되는 아이템 임시로 1000으로 업데이트
+    $tempUpdated = $this->updateItemSeqNo($scheduleItemId, 1000);
+    // 15-9. 업데이트 실패 시 false 반환 
+    if ($tempUpdated === false) {
+      error_log("이동 대상 아이템 임시 seq_no 업데이트 실패");
+      return false;
+    }
+
+    // 15-7. 일정아이템 seq_no 이동
+    $shifted = $this->shiftScheduleItemSeqNo($tripDayId, $oldSeqNo, $newSeqNo, $scheduleItemId);
+    // 15-8. 이동 실패 시 false 반환
+    if ($shifted === false) {
+      error_log("일정아이템 seq_no 이동 실패");
+      return false;
+    }
+
+    
+    //15-9. 대상 일정아이템의 seq_no 업데이트
+    $ok = $this->updateItemSeqNo( $scheduleItemId, $newSeqNo);
+    //15-10. 업데이트 실패 시 false 반환
+    if ($ok === false) {
+      error_log("대상 일정아이템의 seq_no 업데이트 실패");
+      return false;
+    }
+
+    // 15-11. 대상 일정아이템의 seq_no 조회
+    $items = $this->getScheduleItemsByTripDayId($tripDayId);
+    // 14-12. 업데이트 실패 시 false 반환
+    if ($items === false) {
+      error_log("일정아이템 목록 조회 실패");
+      return false;
+    }
+
+    // 15-13. 성공하면 수정 된 일정 아이템 목록 반환
+    return $items;
+
+  }
+
+  // 16. max seq_no 조회 메서드
+  public function getMaxSeqNo(int $tripDayId) : int|false {
+    // 16-1 SQL 작성
+    $sql = "SELECT MAX(seq_no) AS max_seq_no 
+            FROM ScheduleItem 
+            WHERE trip_day_id = :trip_day_id";
+
+    // 16-2. 쿼리 준비
+    $stmt = $this->pdo->prepare($sql);
+    // 16-3. 쿼리 준비 실패시 false 반환
+    if ($stmt === false) {
+      return false;
+    }
+    // 16-4. 쿼리 실행
+    $ok = $stmt->execute([':trip_day_id' => $tripDayId]);
+    // 16-5. 쿼리 실행 실패시 false 반환
+    if ($ok === false) {
+      return false;
+    }
+    // 16-6. 결과 조회 실패시 false 반환
+    $maxSeqNo = $stmt->fetchColumn();
+    if ($maxSeqNo === false) {
+      return false;
+    }
+    // 16-7. 성공 시 max_seq_no 반환
+    return (int)$maxSeqNo;
+  }
+
+  
 }
+
