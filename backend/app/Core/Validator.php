@@ -61,7 +61,7 @@
         // 일차 속성(메모) 수정 유효성 검증
         public function validateMemo(array $date) {
             // memo 검증
-            $validation = v::key('memo', v::length(null, 255), false);
+            $validation = v::key('memo', v::length(null, 255)->notEmpty(), false);
 
             return $this->errorCheck($validation, $date);
         }
@@ -83,7 +83,7 @@
         // 일차 재배치 유효성 검증
         public function validateDayRelocation(array $date) {
             // orders 배열 검증
-            $validation = v::key('orders', v::arrayType()->each(
+            $validation = v::key('orders', v::arrayType()->notEmpty()->each(
                 v::keySet(
                     v::key('day_no', v::notEmpty()->intVal()->positive(), true),
                     v::key('new_day_no', v::notEmpty()->intVal()->positive(), true)
@@ -131,7 +131,7 @@
 
         // 일정 아이템 순서 재배치 유효성 검증
         public function validateRelocationItem(array $date) {
-            $validation = v::key('orders', v::arrayType()->each(
+            $validation = v::key('orders', v::arrayType()->notEmpty()->each(
             v::keySet(
                 v::key('item_id', v::intVal()->positive()->notEmpty(), true),
                 v::key('new_seq_no', v::intVal()->positive()->notEmpty(), true)
