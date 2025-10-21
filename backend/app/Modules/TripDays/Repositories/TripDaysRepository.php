@@ -570,20 +570,20 @@ class TripDaysRepository {
         $this->pdo->beginTransaction();
 
         // 일차 재정렬(임시 변경)
+
         foreach ($orders as $order) {
             $dayNo = $order['day_no'];
-
             // 큰 수를 임시로 day_no에 업데이트
             $tripResult = $this->pdo->prepare("UPDATE TripDay
-                                        SET day_no = day_no + 1000
-                                        WHERE trip_id = :trip_id AND day_no = :day_no;");
-                
-                // 쿼리 실패시
-                if(!$tripResult->execute(['trip_id' => $tripId, 'day_no' => $dayNo])) {
-                    $this->pdo->rollback();
-                    return "UPDATE_FAIL";
-                } 
+                                          SET day_no = day_no + 1000
+                                          WHERE trip_id = :trip_id AND day_no = :day_no;");
+
+            // 쿼리 실패시
+            if(!$tripResult->execute(['trip_id' => $tripId, 'day_no' => $dayNo])) {
+                $this->pdo->rollback();
+                return "UPDATE_FAIL";
             }
+        }
         
         // 일차 재정렬 쿼리 작성
         foreach ($orders as $order) {
@@ -597,8 +597,8 @@ class TripDaysRepository {
             
             // 쿼리 실패시
             if(!$tripResult->execute(['new_day_no' => $newDayNo, 'trip_id' => $tripId, 'day_no' => ($dayNo + 1000)])) {
-                $this->pdo->rollback();
-                return "UPDATE_FAIL";
+              $this->pdo->rollback();
+              return "UPDATE_FAIL";
             } 
 
             // trip_id 조회
