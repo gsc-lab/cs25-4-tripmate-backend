@@ -194,4 +194,77 @@ class ScheduleItemsService {
     return true;
   }
 
+  // 5. 일정 아이템 재배치 메서드
+public function reorderSingleScheduleItem(int $userId, int $tripId, int $dayNo, int $scheduleItemId, int $newSeqNo) : array|false {
+  // 5-1 트랜잭션 시작
+  if (!$this->scheduleItemsRepository->beginTransaction()) {
+    error_log("트랜잭션 시작 실패");
+    return false;
+  }
+
+  // 5-2 trip_id + day_no로 trip_day_id 조회
+  $tripDayId = $this->tripDaysRepository->getTripDayId($tripId, $dayNo);
+  // 5-3 trip_day_id 없으면 롤백 후 false 반환
+  if ($tripDayId === null) {
+    error_log("trip_day_id 조회 실패");
+    $this->scheduleItemsRepository->rollBack();
+    return false;
+  }
+
+  // 5-4 소유권 확인
+  $isOwner = $this->tripDaysRepository->isTripOwner($tripId, $userId);
+  // 5-5 소유권 없으면 롤백 후 false 반환
+  if (!$isOwner) {
+    error_log("소유권 확인 실패");
+    $this->scheduleItemsRepository->rollBack();
+    return false;
+  }
+
+  // 5-6. 아이템이 해당 trip_day에 속하는지 검증
+  $itemsTripDayId = $this->scheduleItemsRepository->getTripDayIdByItemId($scheduleItemId);
+  if ($itemsTripDayId === false || $itemsTripDayId !== $tripDayId) {
+     error_log("요청 path와 item 소속 불일치 또는 아이템 없음 (user_id={$userId}, trip_id={$tripId}, day_no={$dayNo}, trip_day_id={$tripDayId}, schedule_item_id={$scheduleItemId})");
+    $this->scheduleItemsRepository->rollBack();
+    return false;
+  }
+
+  // 5-7 max seq_no 조회 및 보정
+  $maxSeqNo = $this->scheduleItemsRepository->getMaxSeqNo($tripDayId);
+  if ($maxSeqNo === false) {
+    error_log("max seq_no 조회 실패");
+    $this->scheduleItemsRepository->rollBack();
+    return false;
+  }
+  // 5-8 아이템이 하나도 없는 day는 재배치 불가
+  if ($maxSeqNo < 1) {
+    error_log("해당 day에 일정아이템이 없어 재배치 불가");
+    $this->scheduleItemsRepository->rollBack();
+    return false;
+  }
+  if ($newSeqNo < 1) {
+    $newSeqNo = 1;
+  } elseif ($newSeqNo > $maxSeqNo) {
+    $newSeqNo = $maxSeqNo;
+  }
+
+  // 5-9. 이동 불필요 시 목록만 반환
+  $items = $this->scheduleItemsRepository->reorderSingleScheduleItem($scheduleItemId, $newSeqNo);
+  if ($items === false) {
+    error_log("일정 재배치 실패");
+    $this->scheduleItemsRepository->rollBack();
+    return false;
+  }
+
+  // 5-10 커밋 실행
+  $ok = $this->scheduleItemsRepository->commit();
+  // 5-11 커밋 실패 시 롤백 후 false 반환
+  if (!$ok) {
+    error_log("커밋 실패");
+    $this->scheduleItemsRepository->rollBack();
+    return false;
+  }
+
+  // 5-12 일정 재배치 성공 시 수정 된 일정 아이템 목록 반환
+  return $items;
+}
 }
