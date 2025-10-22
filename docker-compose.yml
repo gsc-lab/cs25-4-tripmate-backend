@@ -16,6 +16,7 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ISS=${JWT_ISS}
       - JWT_AUD=${JWT_AUD}
+      - API_KEY=${API_KEY}
     depends_on:
       - db
 
