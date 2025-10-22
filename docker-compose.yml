@@ -13,6 +13,9 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ISS=${JWT_ISS}
+      - JWT_AUD=${JWT_AUD}
     depends_on:
       - db
 
