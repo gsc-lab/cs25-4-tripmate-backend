@@ -80,12 +80,12 @@ class ScheduleItemsController extends Controller {
   public function getScheduleItems(int $tripId, int $dayNo) {
 
     // 2-1. 유효성 검증(trip_id)
-    $validationTripId = $this->validator->validateDay($tripId);
+    $validationTripId = $this->validator->validateTripId($tripId);
     if ($validationTripId !== true) {
       return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
     }
     // 2-2. 유효성 검증(day_no)
-    $validationDayId = $this->validator->validateDayId($dayNo);
+    $validationDayId = $this->validator->validateDayNo($dayNo);
     if ($validationDayId !== true) {
       return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
     }
@@ -116,21 +116,21 @@ class ScheduleItemsController extends Controller {
   // 3. 일정 부분 수정
   // PATCH /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
   public function updateScheduleItem(int $tripId, int $dayNo, int $itemId) {
-    // // 3-1. 유효성 검증(trip_id)
-    // $validationTripId = $this->validator->validateTripId($tripId);
-    // if ($validationTripId !== true) {
-    //   return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
-    // }
-    // // 3-2. 유효성 검증(day_no)
-    // $validationDayId = $this->validator->validateDayId($dayNo);
-    // if ($validationDayId !== true) {
-    //   return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
-    // }
-    // // 3-3. 유효성 검증(item_id)
-    // $validationItemId = $this->validator->validateDay($itemId);
-    // if ($validationItemId !== true) {
-    //   return $this->response->error('MISSING_ITEM_ID', 'item_id가 필요합니다.', 400);
-    // }
+    // 3-1. 유효성 검증(trip_id)
+    $validationTripId = $this->validator->validateTripId($tripId);
+    if ($validationTripId !== true) {
+      return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    }
+    // 3-2. 유효성 검증(day_no)
+    $validationDayId = $this->validator->validateDayNo($dayNo);
+    if ($validationDayId !== true) {
+      return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
+    }
+    // 3-3. 유효성 검증(item_id)
+    $validationItemId = $this->validator->validateItemId($itemId);
+    if ($validationItemId !== true) {
+      return $this->response->error('MISSING_ITEM_ID', 'item_id가 필요합니다.', 400);
+    }
 
     // 3-4. 토큰 검증 및 user_id 추출
     $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
@@ -166,21 +166,21 @@ class ScheduleItemsController extends Controller {
   // 4. 일정 삭제 
   // DELETE /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
   public function deleteScheduleItem(int $tripId, int $dayNo, int $itemId) {
-    // // 4-1. 유효성 검증(trip_id)
-    // $validationTripId = $this->validator->validateTripId($tripId);
-    // if ($validationTripId !== true) {
-    //   return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
-    // }
-    // // 4-2. 유효성 검증(day_no)
-    // $validationDayId = $this->validator->validateDayId($dayNo);
-    // if ($validationDayId !== true) {
-    //   return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
-    // }
-    // // 4-3. 유효성 검증(item_id)
-    // $validationItemId = $this->validator->validateDay($itemId);
-    // if ($validationItemId !== true) {
-    //   return $this->response->error('MISSING_ITEM_ID', 'item_id가 필요합니다.', 400);
-    // }
+    // 4-1. 유효성 검증(trip_id)
+    $validationTripId = $this->validator->validateTripId($tripId);
+    if ($validationTripId !== true) {
+      return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    }
+    // 4-2. 유효성 검증(day_no)
+    $validationDayId = $this->validator->validateDayNo($dayNo);
+    if ($validationDayId !== true) {
+      return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
+    }
+    // 4-3. 유효성 검증(item_id)
+    $validationItemId = $this->validator->validateItemId($itemId);
+    if ($validationItemId !== true) {
+      return $this->response->error('MISSING_ITEM_ID', 'item_id가 필요합니다.', 400);
+    }
 
     // 4-4. 토큰 검증 및 user_id 추출
     $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
@@ -209,16 +209,16 @@ class ScheduleItemsController extends Controller {
   // 5. 일정 재배치
   // POST /api/v1/trips/{trip_id}/days/{day_no}/items:reorder
   public function reorderSingleScheduleItem(int $tripId, int $dayNo) {
-    // // 5-1. 유효성 검증(trip_id)
-    // $validationTripId = $this->validator->validateTripId($tripId);
-    // if ($validationTripId !== true) {
-    //   return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
-    // }
-    // // 5-2. 유효성 검증(day_no)
-    // $validationDayId = $this->validator->validateDayId($dayNo);
-    // if ($validationDayId !== true) {
-    //   return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
-    // }
+    // 5-1. 유효성 검증(trip_id)
+    $validationTripId = $this->validator->validateTripId($tripId);
+    if ($validationTripId !== true) {
+      return $this->response->error('MISSING_TRIP_ID', 'trip_id가 필요합니다.', 400);
+    }
+    // 5-2. 유효성 검증(day_no)
+    $validationDayId = $this->validator->validateDayNo($dayNo);
+    if ($validationDayId !== true) {
+      return $this->response->error('MISSING_DAY_NO', 'day_no가 필요합니다.', 400);
+    }
 
     // 5-3. 토큰 검증 및 user_id 추출
     $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
