@@ -47,7 +47,7 @@
         }
 
         // try-catch 공통 함수
-        public function runValidation($validation, $data, $map) {
+        public function runValidate($validation, $data, $map) {
             try {
                 // 검증 실행
                 $validation->assert($data);
@@ -69,9 +69,6 @@
                 // 검증 실행
                 $validation->assert($data);
             } catch (nve $e) {
-                // 모든 필드별 에러 메시지 배열
-                $messages = $e->getMessages();
-
                 // 에러발생 시키기
                 throw new ValidationException($errorMap, "입력값이 올바르지 않습니다.");
             }
@@ -91,7 +88,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         } 
 
         // 회원가입 유효성 검증
@@ -109,7 +106,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         // 여행 생성/ 여행 수정 유효성 검증
@@ -129,7 +126,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         // 일차 속성(메모) 수정 유효성 검증
@@ -143,7 +140,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
         
         // 일차 생성 유효성 검증
@@ -159,7 +156,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         // 일차 재배치 유효성 검증
@@ -181,7 +178,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         } 
 
         // 외부 결과를 내부로 저장 유효성 검증
@@ -208,7 +205,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         // 일정 아이템 수정 유효성 검증
@@ -224,7 +221,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         // 일정 아이템 추가 유형성 검증
@@ -242,7 +239,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         // 일정 아이템 순서 재배치 유효성 검증
@@ -264,7 +261,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         /**  @param  */
@@ -317,7 +314,7 @@
 
         // 지역 유효성 검증
         /**  @param  */
-        public function validationRegion($data) {
+        public function validateRegion($data) {
             $validation = $this->vIntRule();
             
             // 에러 배열
@@ -339,7 +336,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         /**  @param 쿼리*/
@@ -364,7 +361,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
 
         /**  @param 쿼리*/
@@ -380,7 +377,7 @@
             ];
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidation($validation, $data, $map);
+            $this->runValidate($validation, $data, $map);
         }
     }
 
