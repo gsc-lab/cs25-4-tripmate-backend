@@ -1,5 +1,5 @@
 <?php
-    namespace Tripmate\Backend\Core;
+    namespace Tripmate\Backend\Common\Exceptions;
 
     class ValidationException extends \Exception {
         public array $errors;
