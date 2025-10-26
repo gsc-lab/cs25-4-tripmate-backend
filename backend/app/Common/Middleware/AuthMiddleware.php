@@ -26,7 +26,7 @@
         public static function tokenResponse(Request $req) {
 
             // 헤더가 없으면 null로 설정
-            $header_token = $req->headers['authorization'] ?? null;
+            $header_token = $req->headers['authorization'] ?? $req->headers['Authorization'] ?? null;
 
             // 헤더가 없어 null로 설정된 경우
             if ($header_token === null) {
