@@ -11,7 +11,12 @@
     class Jwt {
         // secret_key 함수
         public static function secretKey() {
-            return getenv("JWT_SECRET_KEY");
+            return $_ENV['JWT_SECRET_KEY'] ?? getenv("JWT_SECRET_KEY");
+        }
+
+        // 알고리즘 함수
+        public static function jwtAlgorithm() {
+            return $_ENV['JWT_ALGORITHM'] ?? getenv('JWT_ALGORITHM') ?? 'HS256';
         }
 
         // JWT 발급
@@ -19,18 +24,22 @@
             // 시크릿 키 설정
             $secretKey = self::secretKey();
 
+            // 환경 설정
+            $expireTime = (int)($_ENV['JWT_EXPIRE_SECONDS'] ?? getenv('JWT_EXPIRE_SECONDS') ?? 43200);
+            $jwtAlgorithm = self::jwtAlgorithm();
+
             // 페이로드 정의
             $payload = [
-                'iss' => getenv("JWT_ISS"), // 발급자
-                'aud' => getenv("JWT_AUD"), // 대상자
+                'iss' => $_ENV["JWT_ISS"] ?? getenv("JWT_ISS"), // 발급자
+                'aud' => $_ENV["JWT_AUD"] ?? getenv("JWT_AUD"), // 대상자
                 'iat' => time(), // 발급 시간
-                'exp' => time() + 43200, // 12시간 유효
+                'exp' => time() + $expireTime, // 12시간 유효
                 'jti' => self::jtiCreate(), // 고유 식별
                 'userId' => $userId
             ];
 
             // JWT 인코딩 생성
-            $jwt = JJWT::encode($payload, $secretKey, 'HS256');  // jti, exp, hs256은 .env에 보관
+            $jwt = JJWT::encode($payload, $secretKey, $jwtAlgorithm);
             return $jwt;
         }
 
@@ -39,15 +48,21 @@
             // 시크릿 키 설정
             $secretKey = self::secretKey();
 
+            // 알고리즘 설정
+            $jwtAlgorithm = self::jwtAlgorithm();
+
             try {
                 // 디코딩
-                $decode = JJWT::decode($jwt, new Key($secretKey, 'HS256'));
+                $decode = JJWT::decode($jwt, new Key($secretKey, $jwtAlgorithm));
             } catch (SignatureInvalidException $e) {
                 // 서명 검증 실패 처리
                 throw new JwtException("TOKEN_SIGNATURE_INVALID", "토큰 서명이 유효하지 않습니다.", 403);
             } catch (ExpiredException $e) {
                 // 토큰 만료 처리
                 throw new JwtException("TOKEN_EXPIRED", "토큰이 만료되었습니다. 다시 로그인해주세요.", 401);
+            } catch (\Exception $e) {
+                // 이 외 모든 에러 처리
+                throw new JwtException("TOKEN_ERROR", "토큰 처리 중 오류가 발생했습니다.", 500);
             }
 
             // id가 JWT 토큰에 없을 시
