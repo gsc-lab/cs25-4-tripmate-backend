@@ -59,7 +59,7 @@
                 $errorMes = $this->mapErrors($messages, $map);
 
                 // 에러발생 시키기
-                throw new ValidationException($errorMes, "입력값이 올바르지 않습니다.");
+                throw new ValidationException($errorMes);
             }
         }
 
@@ -70,7 +70,7 @@
                 $validation->assert($data);
             } catch (nve $e) {
                 // 에러발생 시키기
-                throw new ValidationException($errorMap, "입력값이 올바르지 않습니다.");
+                throw new ValidationException($errorMap);
             }
         }
 
