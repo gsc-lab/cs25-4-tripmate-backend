@@ -5,72 +5,78 @@
     use Firebase\JWT\Key;
     use Firebase\JWT\ExpiredException;
     use Firebase\JWT\SignatureInvalidException;
-    use Tripmate\Backend\Core\Response;
+    use Tripmate\Backend\Utils\JwtException;
 
     // JWT 발급 및 검증
     class Jwt {
+        // secret_key 함수
+        public static function secretKey() {
+            return $_ENV['JWT_SECRET_KEY'] ?? getenv("JWT_SECRET_KEY");
+        }
+
+        // 알고리즘 함수
+        public static function jwtAlgorithm() {
+            return $_ENV['JWT_ALGORITHM'] ?? getenv('JWT_ALGORITHM') ?? 'HS256';
+        }
+
         // JWT 발급
         public static function encode($userId) {
             // 시크릿 키 설정
-            $secretKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30';
+            $secretKey = self::secretKey();
+
+            // 환경 설정
+            $expireTime = (int)($_ENV['JWT_EXPIRE_SECONDS'] ?? getenv('JWT_EXPIRE_SECONDS') ?? 43200);
+            $jwtAlgorithm = self::jwtAlgorithm();
 
             // 페이로드 정의
             $payload = [
-                'iss' => "tripmate.com", // 발급자
-                'aud' => "tripmate/client.com", // 대상자
+                'iss' => $_ENV["JWT_ISS"] ?? getenv("JWT_ISS"), // 발급자
+                'aud' => $_ENV["JWT_AUD"] ?? getenv("JWT_AUD"), // 대상자
                 'iat' => time(), // 발급 시간
-                'exp' => time() + 43200, // 12시간 유효
+                'exp' => time() + $expireTime, // 12시간 유효
                 'jti' => self::jtiCreate(), // 고유 식별
                 'userId' => $userId
             ];
 
             // JWT 인코딩 생성
-            $jwt = JJWT::encode($payload, $secretKey, 'HS256');
+            $jwt = JJWT::encode($payload, $secretKey, $jwtAlgorithm);
             return $jwt;
         }
 
         // JWT 검증
         public static function decode($jwt) {
-            $response = new Response();
-
             // 시크릿 키 설정
-            $secretKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30';
+            $secretKey = self::secretKey();
+
+            // 알고리즘 설정
+            $jwtAlgorithm = self::jwtAlgorithm();
 
             try {
                 // 디코딩
-                $decode = JJWT::decode($jwt, new Key($secretKey, 'HS256'));
+                $decode = JJWT::decode($jwt, new Key($secretKey, $jwtAlgorithm));
             } catch (SignatureInvalidException $e) {
                 // 서명 검증 실패 처리
-                $response->error("TOKEN_SIGNATURE_INVALID", "토큰 서명이 유효하지 않습니다.", 403);
-                exit;
+                throw new JwtException("TOKEN_SIGNATURE_INVALID", "토큰 서명이 유효하지 않습니다.", 403);
             } catch (ExpiredException $e) {
                 // 토큰 만료 처리
-                $response->error("TOKEN_EXPIRED", "토큰이 만료되었습니다. 다시 로그인해주세요.", 401);
-                exit;
+                throw new JwtException("TOKEN_EXPIRED", "토큰이 만료되었습니다. 다시 로그인해주세요.", 401);
+            } catch (\Exception $e) {
+                // 이 외 모든 에러 처리
+                throw new JwtException("TOKEN_ERROR", "토큰 처리 중 오류가 발생했습니다.", 500);
             }
-        
-            // 유저 아이디 확인
-            $userId = $decode->userId; 
 
-            // id 없을 시
-            if (!$userId) {
-                $response->error("TOKEN_UNKNOWN_ERROR", "토큰 처리 중 알 수 없는 오류가 발생했습니다.", 500);
-                exit;
+            // id가 JWT 토큰에 없을 시
+            if (empty($decode->userId)) {
+                throw new JwtException("TOKEN_UNKNOWN_ERROR", "토큰에 사용자 정보가 없습니다.", 401);
             }
             
-            return $userId;
+            // 성공적으로 Id 파싱 성공 시 반환
+            return $decode->userId;
             }
 
         // JTI 생성 함수
         private static function jtiCreate() {
-            $jti = '';
-            // 난수 반복 생성
-            for($i = 1 ; $i <= 32 ; $i++) {
-                // 난수 생성
-                $randomNum = rand(0, 9);
-                $jti .= (string)$randomNum;
-            }
-            // jti 반환
-            return $jti;
+            // 1바이트 당 16진수 2글자로, 총 32글자의 16진수 문자열 반환
+            return bin2hex(random_bytes(16));
         }
     }
