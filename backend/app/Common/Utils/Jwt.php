@@ -5,7 +5,7 @@
     use Firebase\JWT\Key;
     use Firebase\JWT\ExpiredException;
     use Firebase\JWT\SignatureInvalidException;
-    use Tripmate\Backend\Utils\JwtException;
+    use Tripmate\Backend\Common\Exceptions\JwtException;
 
     // JWT 발급 및 검증
     class Jwt {
