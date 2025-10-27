@@ -4,21 +4,14 @@
     // 해쉬
     class Password {
         // 비밀번호 해쉬
-        public static function passwordHash($pwd) {
+        public static function hash($pwd) {
             //비밀번호 해쉬
-            $hashPwd = password_hash($pwd, PASSWORD_BCRYPT);
-
-            return $hashPwd;
+            return password_hash($pwd, PASSWORD_BCRYPT);
         }
 
         // 비밀번호 검증
-        public static function passwordValdataion($pwd, $pwdHash) {
+        public static function verify($pwd, $pwdHash) {
             // 비밀번호 검증
-            if(password_verify($pwd, $pwdHash)) {
-                return true;
-            } else {
-                return false;
-            }
-
+            return password_verify($pwd, $pwdHash);
         }
     }
