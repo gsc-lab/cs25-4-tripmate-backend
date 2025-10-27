@@ -4,72 +4,114 @@ namespace Tripmate\Backend\Core;
 
 // 1. 요청 데이터 처리 클래스
 class Request {
-  // 1-1. GET, POST, PUT, DELETE 메서드 처리
-  public string $method;
-  // 1-2. path 처리
-  public string $path;
-  // 1-3. query 처리
-  public array $query;
-  // 1-4. 헤더 처리
-  public array $headers;
-  // 1-5. JSON 바디 처리
-  public array $body;
+  // 2. 프로퍼티 정의 (요청 정보 저장)
+  protected string $method; // HTTP 메서드
+  protected string $path; // 요청 경로
+  protected array $queryParam = []; // 쿼리 파라미터
+  protected array $headers = []; // 요청 헤더
+  protected array $body; // 요청 바디
+  protected array $attributes = []; // 미들웨어 등에서 추가하는 속성 저장
 
-  // 2. 생성자: 호출시 요청 메서드, path, query, 헤더, 바디 처리
-  public function __construct() {
-    // 2-1 : $this->method : null인 경우 GET으로 설정
-    $this->method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    // 2-2 : uri 저장 
-    $uri = $_SERVER['REQUEST_URI'] ?? '/';
-    // 2-3 : $this->path : uri에서 쿼리 제거한 path 저장
-    $this->path = strtok($uri, '?') ?: '/';
-    // 2-4 : $this->query : uri에서 쿼리만 배열로 저장 (없으면 빈 배열)
-    $this->query = $_GET ?? [];
+  // 3. 생성자: 호출시 요청 메서드, path, query, 헤더, 바디 처리
+  public function __construct(
+    // 3-1. 생성자 매개변수 정의
+    string $method,
+    string $path,
+    array $queryParam,
+    array $headers,
+    array $body
+  ) {
+    // 3-2. 프로퍼티 초기화
+    $this->method = $method;
+    $this->path = $path;
+    $this->queryParam = $queryParam;
+    $this->headers = $headers;
+    $this->body = $body;
+  }
 
-    // 3. 모든 HTTP 요청 헤더 가져오기
-    $rawHeaders = [];
-    foreach ($_SERVER as $k => $v) {
-      if (strpos($k, 'HTTP_') === 0) {
-        $name = strtolower(str_replace('_', '-', substr($k, 5)));
-        $rawHeaders[$name] = $v;
-      } elseif (in_array($k, ['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_ENCODING'], true)) {
-        $name = strtolower(str_replace('_', '-', $k));
-        $rawHeaders[$name] = $v;
+  // 4. request 객체를 생성 후 반환하는 정적 메서드 
+  public static function fromGlobals(): self {
+    // 4-1. 메서드 및 경로 추출
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET'; // 기본값 GET
+    $uri = $_SERVER['REQUEST_URI'] ?? '/'; // 기본값 /
+    $path = parse_url($uri, PHP_URL_PATH) ?? '/'; // 기본값 /
+
+    // 4-2. header 추출
+    $headers = []; // 초기화
+
+    // - getallheaders 함수가 있을 경우 사용
+    if (function_exists('getallheaders')) {
+      foreach (getallheaders() as $k => $v) {$headers[$k] = $v;} 
+    } 
+
+    // - 함수가 없을 경우 직접 추출
+    else {
+      foreach ($_SERVER as $k => $v) {
+        if (str_starts_with($k, 'HTTP_')) {
+          $name = str_replace(' ', '-', substr($k, 5));
+          $headers[$name] = $v;
+        }
       }
     }
-    $this->headers = $rawHeaders;
-    
-    // 4. 소문자로 변환하기
-    $lower = [];
-    // 4-1 : 3번에서 가져온 헤더를 소문자로 변환 ()
-    foreach ($rawHeaders as $key => $value) {
-     $lower[strtolower($key)] = $value;
-    }
-    // 4-2 : headers 속성에 저장
-    $this->headers = $lower;
 
-    // 5. JSON 바디 파싱
-    $this->body = [];
-    // 5-1 : Content-Type 헤더의 타입을 확인
-    $contentType = $this->headers['content-type'] ??'';
-    // 5-2 : input 스트림에서 바디 읽기
-    $raw = file_get_contents('php://input');
+    // 4-3. json 바디 파싱
+    $rowBody = file_get_contents('php://input') ? : ''; // 빈 문자열 방지
+    $bodyArray = []; // 초기화
+    $contentType = $headers['Content-Type'] ?? $headers['content-type'] ?? ''; // - Content-Type 헤더 확인
+    // - application/json 일 경우 json 디코딩
+    if ($rowBody !== '' && stripos($contentType, 'application/json') !== false) {
+      // - json 디코딩
+      $decoded = json_decode($rowBody, true);
+      // - 배열일 경우에만 bodyArray에 할당
+      $bodyArray = is_array($decoded) ? $decoded : []; 
+    }
 
-    // 5-3 : content-type이 application/json인 경우
-    if (stripos($contentType, 'application/json') !== false){
-      // 5-4 : JSON 디코딩
-      $decoded = json_decode($raw, true);
-      // 5-5 : JSON 디코딩 실패시 빈 배열로 설정
-      $this->body = is_array($decoded) ? $decoded : [];
-    }
-    // 5-6 : content-type이 application/json이 아닌 경우
-    elseif (stripos ($contentType, 'application/x-www-form-urlencoded') !== false){
-      // 5-7 : post 값이 있으면 body에 저장 없으면 빈 배열
-      $this->body = $_POST ?? [];
-      
-    }
+    // 4-4. 인스턴스 생성
+    return new self($method, $path, $_GET ?? [], $headers, $bodyArray);
   }
+
+  // 5. 메서드/경로 조회
+  public function method(): string {return $this->method;} // HTTP 메서드
+  public function path(): string {return $this->path;} // 요청 경로
   
+  // 6. 쿼리 파라미터 조회
+  // - key가 null이면 전체 반환, 있으면 해당 key 값 반환 (없으면 default)
+  public function query(?string $key = null, mixed $default = null) : mixed {
+    if ($key === null) {return $this->queryParam;}
+    return $this->queryParam[$key] ?? $default;
   }
 
+  // 7. 헤더 조회
+  public function header(string $name, mixed $default = null): mixed {
+    // 대소문자 구분 없이 조회
+    foreach ($this->headers as $k => $v) {
+      if (strcasecmp($k, $name) === 0) {return $v;} 
+    }
+    return $default;
+  }
+  // 7-1. 전체 헤더가 필요한 경우 : headers
+  public function headers(): array {return $this->headers;} 
 
+  // 8. 바디 조회
+  public function body(?string $key = null, mixed $default = null): mixed {
+    // key가 null이면 전체 반환, 있으면 해당 key 값 반환 (없으면 default)
+    if ($key === null) {return $this->body;}
+    return $this->body[$key] ?? $default;
+  } 
+
+  // 9. 속성 조회/설정 메서드 
+  // - 인증 미들웨어가 user_id 등을 저장할 때 사용 
+  // - 라우터가 경로 파라미터를 저장할 때 사용
+  public function setAttribute(string $key, mixed $value): void { 
+    $this->attributes[$key] = $value; 
+  }
+  public function getAttribute(string $key, mixed $default = null): mixed {
+    return $this->attributes[$key] ?? $default;
+  }
+
+  // 10. user_id 편의 메서드
+  public function userId(): ?int {
+    $userId = $this->getAttribute('user_id');
+    return is_numeric($userId) ? $userId : null;
+  }
+}
