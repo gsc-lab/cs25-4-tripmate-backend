@@ -14,10 +14,10 @@ class DB {
 
   // 5. 커넥션 반환 메서드
   public static function conn(): PDO {
-    // 5-1. 이미 커넥션이 생성되어 있으면 재사용
-    if (self::$pdo !== null) {
+    // 5-1. 없을 때 생성
+    if (self::$pdo === null) {
       
-      // 4-2. .env 값을 사용해 DB 접속 정보 설정 
+      // 5-2. .env 값을 사용해 DB 접속 정보 설정 
       $dsn =  sprintf(
         "mysql:host=%s;dbname=%s;charset=utf8mb4",
         $_ENV['DB_HOST'] ,
