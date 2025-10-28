@@ -9,8 +9,13 @@ class DbException extends \RuntimeException {
   protected string $codeName; // 에러 코드
 
   // 4. 생성자 정의
-  public function __construct(string $codeName, string $message = 'DB 오류', ?\Throwable $previous = null) {
+  public function __construct(string $codeName, string $message = 'DB 오류가 발생했습니다', ?\Throwable $previous = null) {
     parent::__construct($message, 0, $previous); // 부모 생성자 호출
     $this->codeName = $codeName; // 에러 코드 설정
+  }
+
+  // 5. 에러 코드 getter 메서드 정의
+  public function getCodeName(): string {
+    return $this->codeName;
   }
 }
