@@ -74,12 +74,19 @@ class Response
       string $code,
       string $message,
       int $status = 400,
+      ?array $details = null
     ): self {
       // 10-1. error 생성
       $error = [
         'code' => $code, // 오류 코드
         'message' => $message // 오류 메시지
       ];
+
+      // 10-2. 상세 정보(details)가 있을 경우 추가
+      if ($details !== null) {
+        $error['details'] = $details;
+      } 
+
       return $this->json([
         'success' => false, // 성공 여부 false
         'error' => $error // 에러 객체 반환

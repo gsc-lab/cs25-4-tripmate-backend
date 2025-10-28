@@ -4,6 +4,8 @@ namespace Tripmate\Backend\Core;
 
 // 2. use 작성
 use Tripmate\Backend\Common\Exceptions\HttpException;
+use Tripmate\Backend\Common\Exceptions\JwtException;
+use Tripmate\Backend\Common\Exceptions\ValidationException;
 use Tripmate\Backend\Common\Middleware\AuthMiddleware;
 use Tripmate\Backend\Core\Request;
 use Tripmate\Backend\Core\Response;
@@ -38,8 +40,23 @@ class Controller {
       // 5-3. 액션 결과가 Response 인스턴스인 경우 그대로 반환
       $this->response->success($result);
     
+    } catch (ValidationException $e) {
+      // 5-4. ValidationException 예외 처리
+      $this->response->error(
+        'VALIDATION_ERROR',
+        $e->getMessage(),
+        422,
+        $e->getDetails()
+      );
+    } catch (JwtException $e) {
+      // 5-5. JwtException 예외 처리
+      $this->response->error(
+        'JWT_ERROR',
+        $e->getMessage(),
+        401
+      );
     } catch (HttpException $e) {
-      // 5-4. HttpExceptions 예외 처리
+      // 5-6. HttpExceptions 예외 처리
       $this->response->error(
         $e->getCodeName(),
         $e->getMessage(),
@@ -47,7 +64,7 @@ class Controller {
       );
 
     } catch (\Throwable $e) {
-      // 5-5. 알 수 없는 예외 처리 (500 에러)
+      // 5-7. 알 수 없는 예외 처리 (500 에러)
       $this->response->error(
         'INTERNAL_SERVER_ERROR',
         '서버 내부 오류가 발생했습니다.',
