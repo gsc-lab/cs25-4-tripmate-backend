@@ -14,7 +14,7 @@
                 $jwt = Jwt::encode($userId);
             } catch (\Exception $e) {
                 // jwt 발급 시 생길 수 있는 모든 문제의 에러
-                throw new JwtException("TOKEN_ISSUE_FAILED", "토큰 발급 중 오류가 발생했습니다.", 500);
+                throw new JwtException("TOKEN_ISSUE_FAILED", "토큰 발급 중 오류가 발생했습니다.");
             }
 
             // 에러가 없을 경우 JWT
@@ -30,14 +30,14 @@
 
             // 헤더가 없어 null로 설정된 경우
             if ($headerToken === null) {
-                throw new JwtException("TOKEN_MISSING", "토큰이 제공되지 않았습니다.", 401);
+                throw new JwtException("TOKEN_MISSING", "토큰이 제공되지 않았습니다.");
             }
 
             // Bearer 제거 후 파싱
             if (strpos($headerToken, 'Bearer ') === 0) {
                 $jwt = substr($headerToken, 7);
             } else {
-                throw new JwtException("TOKEN_FORMAT_INVALID", "토큰 형식이 올바르지 않습니다.", 400);
+                throw new JwtException("TOKEN_FORMAT_INVALID", "토큰 형식이 올바르지 않습니다.");
             }
 
             // 토큰 검증 
