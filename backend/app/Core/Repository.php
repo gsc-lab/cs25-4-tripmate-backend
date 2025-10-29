@@ -10,14 +10,14 @@ use PDOStatement;
 // 3. 공통 레포지토리 추상화 클래스
 // - 반복되는 prepare, execute, fetch 로직을 메서드로 구현
 abstract class Repository {
-  // 4. DB 프로퍼치 정의
+  // 4. DB 프로퍼티 정의
   protected PDO $db;
 
-  // 5. 생성자 (DB 연결 주입)
+  // 5. 생성자 정의
+  // - DB 커넥션 주입
   public function __construct(PDO $db) {
-    $this->db =  DB::conn();
+    $this->db = $db;
   }
-
   // 6. 공통 쿼리 실행 메서드 
   // - prepare, execute, fetchAll 를 한번에 처리
   protected function query(string $sql, array $params = []): PDOStatement {

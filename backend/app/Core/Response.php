@@ -28,17 +28,26 @@ class Response
     public function json(array $data, int $status = 200): self
     {
       $this->status = $status; // 상태 코드 설정
-      $this->setHeader('Content-Type', 'application/json'); // Content-Type 헤더 설정
+      http_response_code($status);
+      $this->setHeader('Content-Type', 'application/json; charset=utf-8'); // Content-Type 헤더 설정
       
       // JSON 인코딩 및 출력
-      echo json_encode(
+      $json = json_encode(
         $data, // 인코딩할 데이터
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES // 유니코드 및 슬래시 이스케이프 방지
       );
 
-      return $this;
-
+      if ($json === false) {
+        http_response_code(500);
+        echo '{
+        "success":false,
+        "error":{"code":"ENCODE_ERROR",
+        "message":"응답 인코딩 실패"}}';
+        return $this;
     }
+    echo $json;
+    return $this;
+  }
 
     // 7. 표준 성공읍답 메서드 (기본 200)
     // - API 요청 성공 시 data 반환
