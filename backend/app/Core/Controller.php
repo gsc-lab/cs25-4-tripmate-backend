@@ -37,7 +37,8 @@ class Controller {
         return; 
       }
 
-      // 5-3. 액션 결과가 Response 인스턴스인 경우 그대로 반환
+      // 5-3. 액션 결과가 null이 아니면 JSON 성공 응답으로 반환
+      // (액션 내부에서 이미 응답을 보낸 경우에는 null을 반환해야 함)
       $this->response->success($result);
     
     } catch (ValidationException $e) {
@@ -73,14 +74,14 @@ class Controller {
     }  
   }
 
-  // 6. userId 반환 및 토큰 검증 메서드
+  // 6. 토큰 검증 후 userId 반환 (유효하지 않으면 예외)
   function getUserId() : int {
     return AuthMiddleware::tokenResponse($this->request);
   }
 
-  // 7. userId 토큰 검증 메서드 
-  // - 인증만 진행 
-  function riquireAuth() : void {
+  // 7. 인증만 실행 (userId 값은 사용하지 않음)
+  //  - 유효하지 않으면 예외로 중단, 성공 시 아무 것도 반환하지 않음
+  function requireAuth() : void {
     // 반환 없이 토큰 검증
     $this->getUserId();
   }
@@ -92,17 +93,17 @@ class Controller {
     int $defaultSize = 20,        // 기본 페이지 크기
     int $maxSize = 100            // 최대 페이지 크기
   ): array {
-    // 8-1. 기본값 설정
-    $page = (int)($this->request->query['page'] ?? $defaultPage);
-    $size = (int)($this->request->query['size'] ?? $defaultSize);
+    // 8-1. 쿼리에서 값 조회(없으면 기본값)
+    $page = (int) $this->request->query('page', $defaultPage);
+    $size = (int) $this->request->query('size', $defaultSize);
 
-    // 8-2. 유효성 검증
-    if ($page < 1) $page = $defaultPage;
-    if ($size < 1) $size = $defaultSize;
-    if ($size > $maxSize) $size = $maxSize;
+    // 8-2. 경계값 보정
+    if ($page < 1)  { $page = $defaultPage; }
+    if ($size < 1)  { $size = $defaultSize; }
+    if ($size > $maxSize) { $size = $maxSize; }
 
-    // 8-3. 정렬 파라미터
-    $sort = $this->request->query('sort');
+    // 8-3. 정렬 파라미터(없으면 null)
+    $sort = $this->request->query('sort', null);
 
     // 8-4. 결과 반환
     return [
