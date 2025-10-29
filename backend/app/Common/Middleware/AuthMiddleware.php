@@ -3,7 +3,7 @@
 
     use Tripmate\Backend\Common\Utils\Jwt;
     use Tripmate\Backend\Core\Request;
-    use Tripmate\Backend\Utils\JwtException;
+    use Tripmate\Backend\Common\Exceptions\JwtException;
 
     // Bearer 토큰 검증 → req->user 주입
     class AuthMiddleware {
@@ -14,7 +14,7 @@
                 $jwt = Jwt::encode($userId);
             } catch (\Exception $e) {
                 // jwt 발급 시 생길 수 있는 모든 문제의 에러
-                throw new JwtException("TOKEN_ISSUE_FAILED", "토큰 발급 중 오류가 발생했습니다.", 500);
+                throw new JwtException("TOKEN_ISSUE_FAILED", "토큰 발급 중 오류가 발생했습니다.");
             }
 
             // 에러가 없을 경우 JWT
@@ -26,22 +26,25 @@
         public static function tokenResponse(Request $req) {
 
             // 헤더가 없으면 null로 설정
-            $header_token = $req->headers['authorization'] ?? $req->headers['Authorization'] ?? null;
+            $headerToken = $req->header('authorization') ?? $req->header('Authorization') ?? null;
 
             // 헤더가 없어 null로 설정된 경우
-            if ($header_token === null) {
-                throw new JwtException("TOKEN_MISSING", "토큰이 제공되지 않았습니다.", 401);
+            if ($headerToken === null) {
+                throw new JwtException("TOKEN_MISSING", "토큰이 제공되지 않았습니다.");
             }
 
             // Bearer 제거 후 파싱
-            if (strpos($header_token, 'Bearer ') === 0) {
-                $jwt = substr($header_token, 7);
+            if (strpos($headerToken, 'Bearer ') === 0) {
+                $jwt = substr($headerToken, 7);
             } else {
-                throw new JwtException("TOKEN_FORMAT_INVALID", "토큰 형식이 올바르지 않습니다.", 400);
+                throw new JwtException("TOKEN_FORMAT_INVALID", "토큰 형식이 올바르지 않습니다.");
             }
 
             // 토큰 검증 
-            $user_id = Jwt::decode($jwt);
-            return $user_id;
+            $userId = Jwt::decode($jwt);
+
+            $req->setAttribute("user_id", $userId);
+
+            return $userId;
         }
     }

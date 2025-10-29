@@ -5,7 +5,7 @@
     use Firebase\JWT\Key;
     use Firebase\JWT\ExpiredException;
     use Firebase\JWT\SignatureInvalidException;
-    use Tripmate\Backend\Utils\JwtException;
+    use Tripmate\Backend\Common\Exceptions\JwtException;
 
     // JWT 발급 및 검증
     class Jwt {
@@ -56,18 +56,18 @@
                 $decode = JJWT::decode($jwt, new Key($secretKey, $jwtAlgorithm));
             } catch (SignatureInvalidException $e) {
                 // 서명 검증 실패 처리
-                throw new JwtException("TOKEN_SIGNATURE_INVALID", "토큰 서명이 유효하지 않습니다.", 403);
+                throw new JwtException("TOKEN_SIGNATURE_INVALID", "토큰 서명이 유효하지 않습니다.");
             } catch (ExpiredException $e) {
                 // 토큰 만료 처리
-                throw new JwtException("TOKEN_EXPIRED", "토큰이 만료되었습니다. 다시 로그인해주세요.", 401);
+                throw new JwtException("TOKEN_EXPIRED", "토큰이 만료되었습니다. 다시 로그인해주세요.");
             } catch (\Exception $e) {
                 // 이 외 모든 에러 처리
-                throw new JwtException("TOKEN_ERROR", "토큰 처리 중 오류가 발생했습니다.", 500);
+                throw new JwtException("TOKEN_ERROR", "토큰 처리 중 오류가 발생했습니다.");
             }
 
             // id가 JWT 토큰에 없을 시
             if (empty($decode->userId)) {
-                throw new JwtException("TOKEN_UNKNOWN_ERROR", "토큰에 사용자 정보가 없습니다.", 401);
+                throw new JwtException("TOKEN_UNKNOWN_ERROR", "토큰에 사용자 정보가 없습니다.");
             }
             
             // 성공적으로 Id 파싱 성공 시 반환
