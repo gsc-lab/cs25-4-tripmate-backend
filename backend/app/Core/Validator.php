@@ -3,29 +3,25 @@
 
     // validator, NestedValidatonException, Response 라이브러리 가져와 사용
     use Respect\Validation\Validator as v;
-    use Respect\Validation\Exceptions\NestedValidationException as nve;
+    use Respect\Validation\Exceptions\NestedValidationException as NVE;
     use Tripmate\Backend\Common\Exceptions\ValidationException;
+    use Tripmate\Backend\Common\Utils\Date;
 
     // 클래스 정의
     class Validator {
         // Int타입 검사
         public function vIntRule() {
-            return v::intVal()->positive()->notEmpty();
-        }
-
-        // DateTime 타입 검사
-        private function vDateTimeRule() {
-            return v::date()->notEmpty();
+            return v::intVal()->positive();
         }
 
         // Length타입 검사
         private function vLengthRule($min = null, $max = null) {
-            return v::stringVal()->notEmpty()->length($min, $max);
+            return v::stringVal()->notBlank()->length($min, $max);
         }
 
         // String타입 검사
         private function vStringRule() {
-            return v::stringVal()->notEmpty();
+            return v::stringVal()->notBlank();
         }
 
         // Float타입 검사
@@ -33,14 +29,20 @@
             return v::floatVal()->notOptional();
         }
 
+        // nullable 래퍼 
+        private function nullable($rule) {
+            return v::optional($rule);
+        }
+
+
         // try-catch 공통 함수
-        public function runValidate($validation, $data) {
+        public function runValidate($validation, $data, ?string $field = null) {
             try {
                 // 검증 실행
                 $validation->assert($data);
-            } catch (nve $e) {
+            } catch (NVE $e) {
                 // 모든 필드별 에러 메시지 반환
-                throw new ValidationException($e->getMessages());
+                throw new ValidationException($e->getMessages(), $field);
             }
         }
 
@@ -71,8 +73,13 @@
             // title, region_id, start/end_date 검증
             $validation = v::key('title', $this->vLengthRule(1, 100), true)
                         -> key('region_id', $this->vIntRule(), true)
-                        -> key('start_date', $this->vDateTimeRule(), true)
-                        -> key('end_date', $this->vDateTimeRule(), true);
+                        -> key('start_date', v::callback([Date::class, 'isValidDateYmd']), true)
+                        ->key('end_date', v::callback([Date::class, 'isValidDateYmd'])
+                            ->callback(function($endDate) use ($data) {
+                                // start_date가 있을 때 비교 수행
+                                if (!isset($data['start_date'])) return true;
+                                return Date::isBeforeOrEqual($data['start_date'], $endDate);
+                            }), true);
 
             // try-catch 예외 처리 함수 실행
             $this->runValidate($validation, $data);
@@ -130,7 +137,7 @@
         // 일정 아이템 수정 유효성 검증
         public function validateEditItem(array $data) {
             // 검증
-            $validation = v::key('visit_time', $this->vDateTimeRule(), true)
+            $validation = v::key('visit_time', $this->nullable(v::callback([Date::class, 'isValidDateYmd'])), false)
                     -> key('seq_no', $this->vIntRule(), true);
 
             // try-catch 예외 처리 함수 실행
@@ -141,7 +148,7 @@
         public function validateAddItem(array $data) {
             // 일정 아이템 검증
             $validation = v::key('place_id', $this->vIntRule(), true)
-                        -> key('visit_time', $this->vDateTimeRule(), true)
+                        ->key('visit_time', $this->nullable(v::callback([Date::class, 'isValidDateYmd'])), true)
                         -> key('seq_no', $this->vIntRule(), true);
 
             // try-catch 예외 처리 함수 실행
@@ -169,7 +176,7 @@
             $validation = $this->vIntRule();
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidate($validation, $data);
+            $this->runValidate($validation, $data, 'item_id');
         }
 
         /**  @param  */
@@ -178,7 +185,7 @@
             $validation = $this->vIntRule();
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidate($validation, $data);
+            $this->runValidate($validation, $data, 'place_id');
         }
         
         /**  @param  */
@@ -187,7 +194,7 @@
             $validation = $this->vIntRule();
 
             // try-catch 예외 처리 함수 실행
-            $this->runValidate($validation, $data);
+            $this->runValidate($validation, $data, 'day_no');
         }
 
         /**  @param  */
@@ -196,7 +203,7 @@
             $validation = $this->vIntRule();
             
             // try-catch 예외 처리 함수 실행
-            $this->runValidate($validation, $data);
+            $this->runValidate($validation, $data, 'trip_id');
         }
 
         // 지역 유효성 검증
@@ -205,9 +212,8 @@
             $validation = $this->vIntRule();
             
             // try-catch 예외 처리 함수 실행
-            $this->runValidate($validation, $data);
+            $this->runValidate($validation, $data, 'region_id');
         }
-
 
         /**  @param 쿼리*/
         public function validateRegionSearch($data) {
