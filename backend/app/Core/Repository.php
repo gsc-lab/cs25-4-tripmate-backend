@@ -73,5 +73,21 @@ abstract class Repository {
     // 10-1. 마지막 삽입된 ID 반환
     return (int)$this->db->lastInsertId();
   }
+
+  // 11. 트랜젝션 관련 보조 메서드
+  // 트랜잭션 시작
+  public function beginTransaction(): void {
+    $this->db->beginTransaction();
+  }
+
+  // 커밋
+  public function commit(): void {
+    $this->db->commit();
+  }
+
+  // 롤백
+  public function rollback(): void {
+    $this->db->rollBack();
+  }
 }
 
