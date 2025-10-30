@@ -1,14 +1,18 @@
 <?php
+// namespace 작성
 namespace Tripmate\Backend\Modules\Trips\Controllers;
 
-use Tripmate\Backend\Common\Middleware\AuthMiddleware;
-use Tripmate\Backend\Core\Controller;
-use Tripmate\Backend\Modules\Trips\Services\TripsService;
+// useq 작성
 use Tripmate\Backend\Core\Request;
 use Tripmate\Backend\Core\Response;
 use Tripmate\Backend\Core\Validator;
+use Tripmate\Backend\Common\Middleware\AuthMiddleware;
+use Tripmate\Backend\Common\Exceptions\ValidationException;
+use Tripmate\Backend\Common\Exceptions\JwtException;
+use Tripmate\Backend\Common\Exceptions\DbException;
+use Tripmate\Backend\Modules\Trips\Services\TripsService;
 
-// 1. TripController 클래스 정의
+// TripController 클래스 정의
 class TripsController extends Controller {
   // 2. 프러퍼티 정의
   public TripsService $tripsService;
