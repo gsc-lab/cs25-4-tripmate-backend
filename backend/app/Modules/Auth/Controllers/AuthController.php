@@ -29,7 +29,7 @@
             return $this->run(function() {
                 $data = $this->request->body();
                 $this->validator->validateUserRegister($data);
-                $this->services->userRegister($data);
+                $this->services->registerUser($data);
 
                 return $this->response->noContent();
             }); 
@@ -45,7 +45,7 @@
             return $this->run(function() {
                 $data = $this->request->body();
                 $this->validator->validateUser($data);
-                $serverResponse = $this->services->userLogin($data);
+                $serverResponse = $this->services->loginUser($data);
                 
                 return [
                     "access_token" => $serverResponse, 
