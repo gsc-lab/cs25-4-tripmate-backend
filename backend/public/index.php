@@ -1,5 +1,5 @@
-<?php 
-// AltoRouter 라이브러리 로드
+<?php
+// 0. autoload 로드
 require_once __DIR__ . '/../vendor/autoload.php';
 
 // use 작성
@@ -7,81 +7,90 @@ use Tripmate\Backend\Core\Request;
 use Tripmate\Backend\Core\Response;
 use Tripmate\Backend\Common\Exceptions\HttpException;
 
-
-// 1. 공용 객체 생성 (request, response, AutoRouter)
-$request = Request::fromGlobals(); 
+// 1. 공용 객체 생성 (Request, Response, AltoRouter)
+$request  = Request::fromGlobals();
 $response = new Response();
-$router = new AltoRouter();
+$router   = new AltoRouter();
 
-// 2. 모듈 라우터 자동 등록 
-// - 각 Modules/*/Routes.php 는 다음 시그니처의 콜러블을 return 해야 함
+// 2. 모듈 라우터 자동 등록
+// - 각 Modules/*/Routes.php 는 콜러블을 return 해야 함
 // - function (AltoRouter $router, Request $request, Response $response): void
 foreach (glob(__DIR__ . '/../app/Modules/*/Routes.php') as $routeFile) {
     $register = require $routeFile;
+    // 2-1. 콜러블이 아니면 스킵
     if (!is_callable($register)) {
         error_log("Routes.php must return a callable: {$routeFile}");
-        continue; // 콜러블 아닌 파일은 스킵
+        continue;
     }
+    // 2-2. 라우터 등록 실행
     $register($router, $request, $response);
 }
-// 3. 매칭
+
+// 3. 라우팅 매칭
 $match = $router->match();
 
-// 4. 매칭 후 error 처리 (404)
+// 4. 매칭 실패 시 404 반환
 if ($match === false) {
     $response->error('NOT_FOUND', 'Route not found', 404);
     exit;
 }
 
-// 5. 라우트 파라미터를 request (setAttributes)에 주입 
-// - 컨트롤러에서 $request->getAttribute('paramName') 으로 접근 가능
+// 5. 매칭된 파라미터를 Request에 주입
+// - 컨트롤러에서 $this->request->getAttribute('paramName') 으로 접근 가능
 if (!empty($match['params']) && is_array($match['params'])) {
     foreach ($match['params'] as $key => $value) {
         $request->setAttribute($key, $value);
     }
 }
 
-// 6. 콜백 실행
-// - 에러 일괄 처리
+// 6. 타겟(라우트 대상) 추출
 $target = $match['target'];
 
-// 7. 예외 처리
+// 7. 예외 처리 블록
 try {
-  // 7-1. 잘못된 타겟 타입 처리
-  if (!is_callable($target)) {
-      // - 500 : 잘못된 타겟 타입 
-      // - Invalid route target : 라우트 타겟이 콜러블이 아님
-      $response->error('INTERNAL_ERROR', '라우트 타켓이 콜러블이 아닙니다', 500);
-      exit;
-  }
+    // 7-1. 컨트롤러 배열형([Controller::class, 'method']) 처리
+    if (is_array($target) && count($target) === 2) {
+        [$class, $method] = $target;
 
-  // 7-2. 컨트롤러에 request, response을 기본 인자로 전달
-  // - 라우트에서 개별 파라피터가 필요한 경우
-  // - $request->getAttribute('paramName') 으로 접근
-  $result = call_user_func($target, $request, $response);
+        // 7-1-1. 컨트롤러 클래스 존재 확인
+        if (!class_exists($class)) {
+            throw new HttpException(500, 'CLASS_NOT_FOUND', "{$class} 클래스를 찾을 수 없습니다");
+        }
+
+        // 7-1-2. 컨트롤러 인스턴스 생성 및 Request/Response 주입
+        $controller = new $class($request, $response);
+
+        // 7-1-3. 해당 메서드 존재 여부 확인
+        if (!method_exists($controller, $method)) {
+            throw new HttpException(500, 'METHOD_NOT_FOUND', "{$method} 를 {$class}에서 찾을 수 없습니다");
+        }
+
+        // 7-1-4. 컨트롤러 메서드 실행
+        $result = $controller->$method();
+    }
+    // 7-2. 콜러블(클로저) 형태의 타겟 처리
+    elseif (is_callable($target)) {
+        $result = call_user_func($target, $request, $response);
+    }
+    // 7-3. 둘 다 아닌 경우 예외 처리
+    else {
+        throw new HttpException(500, 'INVALID_ROUTE_TARGET', '라우트 타겟이 잘못되었습니다.');
+    }
+
+    // 7-4. 컨트롤러가 Response 객체 반환 시 종료
+    if ($result instanceof Response) {
+        return;
+    }
 
 } catch (HttpException $e) {
-  // 7-3. HttpExceptions 예외 처리
-  $status = $e->getStatus();
-  $code = $e->getCodeName();
-  $message = $e->getMessage();
-
-  // 7-4 . 에러 응답 전송
-  $response->json([
-    'success' => false,
-    'error' => [
-      'code' => $code,
-      'message' => $message
-    ]
-  ], $status);
-  
-} catch (\Throwable $e) {
-  // 7-5. 알 수 없는 예외 처리 (500 에러)
-  error_log(...); // 에러 로깅
-  $response->error(
-    'INTERNAL_SERVER_ERROR',
-    '서버 내부 오류가 발생했습니다.',
-    500
-  );
+    // 8-1. 명시적 HTTP 예외 처리
+    $response->error($e->getCodeName(), $e->getMessage(), $e->getStatus());
+} catch (Throwable $e) {
+    // 8-2. 알 수 없는 예외 처리
+    error_log("[UNHANDLED] {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+    $response->error(
+        'INTERNAL_SERVER_ERROR',
+        '서버 내부 오류가 발생했습니다.',
+        500
+    );
 }
-
