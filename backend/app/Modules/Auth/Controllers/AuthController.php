@@ -25,12 +25,12 @@
          * - 성공 시 (204 No Content) 응답
          */
         public function userRegister() {
-            return $this->run(function() {
 
+            return $this->run(function() {
                 $data = $this->request->body();
                 $this->validator->validateUserRegister($data);
                 $this->services->registerService($data);
-                
+
                 return $this->response->noContent();
             }); 
         }
@@ -46,7 +46,6 @@
                 $data = $this->request->body();
                 $this->validator->validateUser($data);
                 $serverResponse = $this->services->loginService($data);
-
                 return [
                     "access_token" => $serverResponse, 
                     "token_type" => "Bearer", 
@@ -63,7 +62,6 @@
 
             return $this->run(function() {
                 $this->requireAuth();
-
                 return $this->response->noContent();
             });
         }
