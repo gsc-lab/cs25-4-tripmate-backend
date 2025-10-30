@@ -2,21 +2,25 @@
 // namespace 작성
 namespace Tripmate\Backend\Modules\Trips\Services;
 
-// 1. TripsRepository 클래스 로드 및 Date 유틸리티 로드
+// use 작성
 use Tripmate\Backend\Common\Utils\Date;
+use Tripmate\Backend\Common\Exceptions\HttpException;
 use Tripmate\Backend\Modules\Trips\Repositories\TripsRepository;
 
-// 2. TripsService 클래스 정의
+// TripsService 클래스 정의
+// - Trip 관련 비즈니스 로직 처리
 class TripsService {
-  // 3. 프러퍼티 정의
+  // 프러퍼티 정의
   public TripsRepository $tripsRepository;
 
-  // 4. 생성자에서 TripsRepository 초기화
-  public function __construct() {
-    $this->tripsRepository = new TripsRepository();
+  // 생성자에서 TripsRepository 초기화
+  public function __construct(?TripsRepository $tripsRepository = null) 
+  {
+    $this->tripsRepository = $tripsRepository ?? new TripsRepository();
   }
 
-  // 5. 여행 생성 메서드
+  // 1. Trip 생성
+  // - 실패시 HttpException 발생
   public function createTrip(int $userId, int $regionId, string $title, string $startDate, string $endDate): int|false {
     // 5-1. 날짜 형식 검증
     if (!Date::isValidDateYmd($startDate) || !Date::isValidDateYmd($endDate)) {
