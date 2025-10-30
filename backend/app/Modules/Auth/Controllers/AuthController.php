@@ -24,12 +24,12 @@
          * - 요청 데이터 유효성 검증 후 서비스 연결
          * - 성공 시 (204 No Content) 응답
          */
-        public function userRegister() {
+        public function register() {
 
             return $this->run(function() {
                 $data = $this->request->body();
                 $this->validator->validateUserRegister($data);
-                $this->services->registerService($data);
+                $this->services->userRegister($data);
 
                 return $this->response->noContent();
             }); 
@@ -40,12 +40,13 @@
          * - 유효성 검증 후 서비스 호출로 JWT 발급
          * - 성공 시 토큰 응답 반환
          */
-        public function userLogin() {
+        public function login() {
 
             return $this->run(function() {
                 $data = $this->request->body();
                 $this->validator->validateUser($data);
-                $serverResponse = $this->services->loginService($data);
+                $serverResponse = $this->services->userLogin($data);
+                
                 return [
                     "access_token" => $serverResponse, 
                     "token_type" => "Bearer", 
@@ -58,10 +59,11 @@
          * 로그아웃 컨트롤러
          * -유효한 토큰인 경우 성공 처리(204 No Connect)
          */
-        public function userLogout() {
+        public function logout() {
 
             return $this->run(function() {
                 $this->requireAuth();
+                
                 return $this->response->noContent();
             });
         }
