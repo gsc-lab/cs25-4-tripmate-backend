@@ -271,20 +271,4 @@ class TripsRepository extends Repository {
     }
   }
 
-  // 8. Trip과 TripDay 모두 삭제
-  // - 트랜잭션 처리
-  public function deleteTripAndDays(int $userId, int $tripId) : bool 
-  {
-    return DB::transaction(function(PDO $pdo) use ($userId, $tripId) {
-      // 8-1. 같은 커넥션을 베이스에 주입해 일관성 유지
-      $this->db = $pdo;
-
-      // 8-2. TripDay 및 Trip 삭제
-      $this->deleteTripDaysByTripId($tripId);
-      $deleted = $this->deleteTrip($userId, $tripId);
-
-      // 8-3. Trip 삭제 성공 여부 반환
-      return $deleted;
-    });
-  }
 }
