@@ -19,10 +19,9 @@ class TripsService extends Service
   public TripsRepository $tripsRepository;
 
   // 같은 PDO로 Repo를 생성해 하나의 트랜잭션 컨텍스트를 공유
-  public function __construct(PDO $db, ?TripsRepository $tripsRepository = null) 
+  public function __construct(?TripsRepository $tripsRepository = null) 
   {
-    parent::__construct($db);
-    $this->tripsRepository = $tripsRepository ?? new TripsRepository($db);
+    $this->tripsRepository = $tripsRepository ?? new TripsRepository();
   }
 
   // 1. Trip 생성
