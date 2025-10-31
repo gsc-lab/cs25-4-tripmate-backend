@@ -2,8 +2,8 @@
     namespace Tripmate\Backend\Modules\Auth\Services;
 
     use Tripmate\Backend\Common\Exceptions\DbException;
-use Tripmate\Backend\Common\Exceptions\HttpException;
-use Tripmate\Backend\Common\Utils\Password;
+    use Tripmate\Backend\Common\Exceptions\HttpException;   
+    use Tripmate\Backend\Common\Utils\Password;
     use Tripmate\Backend\Core\Service;
     use Tripmate\Backend\Core\DB;
     use Tripmate\Backend\Modules\Auth\Repositories\UserRepository;
@@ -32,27 +32,29 @@ use Tripmate\Backend\Common\Utils\Password;
          */
         public function registerUser(array $data) {
 
-            return $this->transaction(function() use ($data) {
-                try {
+            try {   
+                return $this->transaction(function() use ($data) {
                     $email = $data['email'];
                     $password = $data['password'];
                     $nickname = $data['nickname'];
 
-                    $hashedPassword = Password::hash($password);
-
+                    // 이메일 중복 확인
                     $normalizedEmail = strtolower($email); // 이메일 정규화
-                    
-                    return $this->repository->createUser($normalizedEmail, $hashedPassword, $nickname);
-                } catch (DbException $e) {
-                    switch ($e->getCode()) {
-                        case 'USER_DUPLICATE_EMAIL':
-                            throw new HttpException(500, $e->getMessage(), $e->getCode());
-                        case 'UNEXPECTED_ERROR':
-                            throw new HttpException(500, $e->getMessage(), $e->getCode());
+                    $result = $this->repository->findEmail($normalizedEmail);
+                    if ($result) {
+                        throw new HttpException(409, 'USER_DUPLICATE_EMAIL', '이미 사용중인 이메일입니다.');
                     }
+
+                    // 회원 데이터 저장
+                    $hashedPassword = Password::hash($password);
+                    return $this->repository->createUser($normalizedEmail, $hashedPassword, $nickname);
+                    });
+
+                } catch (DbException $e) {
+                    error_log('여기서 에러가나서요');
+                    throw new HttpException(500, 'UNEXPECTED_ERROR', "회원가입 중 알 수 없는 에러가 발생하였습니다.", $e);
                 }
-            });
-        }
+            }
 
         /**
          * 로그인 서비스
@@ -61,13 +63,18 @@ use Tripmate\Backend\Common\Utils\Password;
          * @return string 
          */
         public function loginUser($data) {
-            return $this->transaction(function() use ($data) {
-                $email = $data['email'];
-                $password = $data['password'];
+            try {
+                return $this->transaction(function() use ($data) {
+                    $email = $data['email'];
+                    $password = $data['password'];
 
-                $result = $this->repository->loginDB($email, $password);
+                    // 유저 검증
+                    $userId = $this->repository->findUser($email, $password);
 
-                return amw::tokenRequest($result);
-            });
+                    return amw::tokenRequest($userId);
+                });
+            } catch (DbException $e) {
+                throw new HttpException(500, 'LOGIN_ERROR', '로그인 도중 알 수 없는 에러가 발생하였습니다.', $e);
+            }
         }
     }
