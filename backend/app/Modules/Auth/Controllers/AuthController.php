@@ -30,8 +30,9 @@
                 $data = $this->request->body();
                 $this->validator->validateUserRegister($data);
                 $this->services->registerUser($data);
+                $this->response->noContent();
 
-                return $this->response->noContent();
+                return null;
             }); 
         }
 
