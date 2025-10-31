@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 // 0. autoload 로드
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -12,17 +14,24 @@ $request  = Request::fromGlobals();
 $response = new Response();
 $router   = new AltoRouter();
 
-// 2. 모듈 라우터 자동 등록
+// 2. 모듈 라우터 자동 등록 (미작성 Routes.php 는 조용히 PASS)
 // - 각 Modules/*/Routes.php 는 콜러블을 return 해야 함
 // - function (AltoRouter $router, Request $request, Response $response): void
 foreach (glob(__DIR__ . '/../app/Modules/*/Routes.php') as $routeFile) {
-    $register = require $routeFile;
-    // 2-1. 콜러블이 아니면 스킵
-    if (!is_callable($register)) {
-        error_log("Routes.php must return a callable: {$routeFile}");
+    // require의 기본 반환은 보통 1 (return이 없을 때)
+    $register = (static function (string $file) { return require $file; })($routeFile);
+
+    // 아직 미작성(1 또는 null) → 조용히 스킵
+    if ($register === 1 || $register === null) {
         continue;
     }
-    // 2-2. 라우터 등록 실행
+
+    // 콜러블이 아니면 스킵 
+    if (!is_callable($register)) {
+        continue;
+    }
+
+    // 콜러블이면 라우터 등록 실행
     $register($router, $request, $response);
 }
 
@@ -60,9 +69,9 @@ try {
         // 7-1-2. 컨트롤러 인스턴스 생성 및 Request/Response 주입
         $controller = new $class($request, $response);
 
-        // 7-1-3. 해당 메서드 존재 여부 확인
-        if (!method_exists($controller, $method)) {
-            throw new HttpException(500, 'METHOD_NOT_FOUND', "{$method} 를 {$class}에서 찾을 수 없습니다");
+        // 7-1-3. 실제로 호출 가능한지 확인
+        if (!is_callable([$controller, $method])) {
+            throw new HttpException(500, 'METHOD_NOT_CALLABLE', "{$class}::{$method} 는 호출할 수 없습니다");
         }
 
         // 7-1-4. 컨트롤러 메서드 실행
@@ -70,7 +79,7 @@ try {
     }
     // 7-2. 콜러블(클로저) 형태의 타겟 처리
     elseif (is_callable($target)) {
-        $result = call_user_func($target, $request, $response);
+        $result = $target($request, $response);
     }
     // 7-3. 둘 다 아닌 경우 예외 처리
     else {
@@ -82,15 +91,22 @@ try {
         return;
     }
 
+    // 컨트롤러가 null 이외의 값(배열/스칼라 등)을 반환했다면
+    // 필요 시 프로젝트 규약에 맞게 자동 래핑 가능 (여기선 침묵)
+    // if ($result !== null) {
+    //     $response->json(['data' => $result], 200);
+    //     return;
+    // }
+
 } catch (HttpException $e) {
     // 8-1. 명시적 HTTP 예외 처리
-    $response->error($e->getCodeName(), $e->getMessage(), $e->getStatus());
+    $codeName = method_exists($e, 'getCodeName') ? $e->getCodeName() : 'HTTP_ERROR';
+    $status   = method_exists($e, 'getStatus') ? $e->getStatus() : ($e->getCode() ?: 500);
+    $response->error($codeName, $e->getMessage(), $status);
+    return;
 } catch (Throwable $e) {
-    // 8-2. 알 수 없는 예외 처리
+    // 8-2. 알 수 없는 예외 처리 (간단 로그 + 500)
     error_log("[UNHANDLED] {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
-    $response->error(
-        'INTERNAL_SERVER_ERROR',
-        '서버 내부 오류가 발생했습니다.',
-        500
-    );
+    $response->error('INTERNAL_SERVER_ERROR', '서버ㄴㄴ 내부 오류가 발생했습니다.', 500);
+    return;
 }

@@ -50,7 +50,8 @@
         public function validateUser(array $data) {
             // email, password 검증
             $validation = v::key('email', v::email()->notEmpty()->length(null, 255), true)
-                        -> key('password', v::alnum()->notEmpty()->length(8, 128), true);
+                        -> key('password', v::stringType()->length(8, 128)
+                        -> regex('/[A-Z]/')->regex('/[a-z]/')->regex('/[0-9]/')->regex('/[!@#*]/'), true);
 
             // try-catch 예외 처리 함수 실행
             $this->runValidate($validation, $data);

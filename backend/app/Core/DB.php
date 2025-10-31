@@ -41,32 +41,6 @@ class DB {
     return self::$pdo;
   } 
 
-    // 6. 트랜잭션 헬퍼 메서드
-    public static function transaction(callable $callback) {
-      // 6-1. DB 커넥션 가져오기
-      $pdo = self::conn();
-
-      try {
-        // 6-2. 트랜잭션 시작
-        $pdo->beginTransaction();
-
-        // 6-3. 콜백 함수 실행
-        $result = $callback($pdo);
-
-        // 6-4. 커밋
-        $pdo->commit();
-        return $result;
-
-
-      } catch (\Throwable $e) {
-        // 6-5. 실패시 롤백
-        if ($pdo->inTransaction()) {
-          $pdo->rollBack();
-        }
-        // 6-6. 상위로 예외 재던지기
-        throw $e;
-      }
-    }
-  }
+}
   
 
