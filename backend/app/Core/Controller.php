@@ -7,8 +7,6 @@ use Tripmate\Backend\Common\Exceptions\HttpException;
 use Tripmate\Backend\Common\Exceptions\JwtException;
 use Tripmate\Backend\Common\Exceptions\ValidationException;
 use Tripmate\Backend\Common\Middleware\AuthMiddleware;
-use Tripmate\Backend\Core\Request;
-use Tripmate\Backend\Core\Response;
 
 // 3. 공통 컨트롤러 클래스
 class Controller { 
@@ -17,7 +15,6 @@ class Controller {
   protected Request $request;
   protected Response $response;
   // protected ?Validator $validator = null; // 유효성 검증 도구
-  
   
   // 4. 생성자 (request, response 초기화) 
   public function __construct(Request $request, Response $response) {
@@ -28,45 +25,58 @@ class Controller {
   // 5. 실행 메서드
   // - HttpExceptions -> 표준 에러 JSON 응답 처리
   // - 알 수 없는 예외 -> 500 에러 응답 처리
-  protected function run(\Closure $action) : void {
+  // - Response 반환 시 그대로 통과
+  // - null 반환 시 204 No Content
+  // - 배열/스칼라 반환 시 success(JSON)으로 래핑
+  protected function run(\Closure $action) : Response {
     try {
       // 5-1. 액션 실행
-      $result = $action();
-      // 5-2. 액션 내에서 집접 응답을 완료한 경우(null 반환)
-      if ($result === null) {
-        return; 
+      $result = $action($this->request, $this->response);
+
+      // 5-2. 액션이 Response 직접 반환한 경우 → 그대로 반환
+      if ($result instanceof Response) {
+        return $result;
       }
 
-      // 5-3. 액션 결과가 null이 아니면 JSON 성공 응답으로 반환
-      // (액션 내부에서 이미 응답을 보낸 경우에는 null을 반환해야 함)
-      $this->response->success($result);
-    
+      // 5-3. 액션 내에서 이미 응답 완료(null 반환) → 204 처리
+      if ($result === null) {
+        return $this->response->noContent();
+      }
+
+      // 5-4. 액션 결과가 배열/스칼라인 경우 → 성공 응답 래핑
+      //      (스칼라는 result 키로 감싸 일관성 유지)
+      $payload = is_array($result) ? $result : ['result' => $result];
+      return $this->response->success($payload);
+
     } catch (ValidationException $e) {
-      // 5-4. ValidationException 예외 처리
-      $this->response->error(
+      // 5-5. ValidationException 예외 처리
+      return $this->response->error(
         'VALIDATION_ERROR',
         $e->getMessage(),
         422,
         $e->getDetails()
       );
+
     } catch (JwtException $e) {
-      // 5-5. JwtException 예외 처리
-      $this->response->error(
+      // 5-6. JwtException 예외 처리
+      return $this->response->error(
         'JWT_ERROR',
         $e->getMessage(),
         401
       );
+
     } catch (HttpException $e) {
-      // 5-6. HttpExceptions 예외 처리
-      $this->response->error(
+      // 5-7. HttpExceptions 예외 처리
+      return $this->response->error(
         $e->getCodeName(),
         $e->getMessage(),
         $e->getStatus()
       );
 
     } catch (\Throwable $e) {
-      // 5-7. 알 수 없는 예외 처리 (500 에러)
-      $this->response->error(
+      // 5-8. 알 수 없는 예외 처리 (500 에러)
+      error_log("[UNHANDLED] {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+      return $this->response->error(
         'INTERNAL_SERVER_ERROR',
         '서버 내부 오류가 발생했습니다.',
         500
@@ -114,4 +124,3 @@ class Controller {
   }
 
 }
-

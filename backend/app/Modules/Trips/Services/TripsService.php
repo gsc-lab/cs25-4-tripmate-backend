@@ -2,200 +2,192 @@
 // namespace 작성
 namespace Tripmate\Backend\Modules\Trips\Services;
 
-// 1. TripsRepository 클래스 로드 및 Date 유틸리티 로드
+// use 작성
+use PDO;
+use Tripmate\Backend\Core\Service; 
 use Tripmate\Backend\Common\Utils\Date;
+use Tripmate\Backend\Common\Exceptions\DbException;
+use Tripmate\Backend\Common\Exceptions\HttpException;
 use Tripmate\Backend\Modules\Trips\Repositories\TripsRepository;
 
-// 2. TripsService 클래스 정의
-class TripsService {
-  // 3. 프러퍼티 정의
+// TripsService
+// - 공통 Service 상속 받아 사용
+// - Trip 관련 비즈니스 로직 처리
+class TripsService extends Service 
+{
+  // 프러퍼티 정의
   public TripsRepository $tripsRepository;
 
-  // 4. 생성자에서 TripsRepository 초기화
-  public function __construct() {
-    $this->tripsRepository = new TripsRepository();
+  // 같은 PDO로 Repo를 생성해 하나의 트랜잭션 컨텍스트를 공유
+  public function __construct(?TripsRepository $tripsRepository = null) 
+  {
+    $this->tripsRepository = $tripsRepository ?? new TripsRepository();
   }
 
-  // 5. 여행 생성 메서드
-  public function createTrip(int $userId, int $regionId, string $title, string $startDate, string $endDate): int|false {
-    // 5-1. 날짜 형식 검증
-    if (!Date::isValidDateYmd($startDate) || !Date::isValidDateYmd($endDate)) {
-      return false;
-    }
-    // 5-2. 시작일이 종료일보다 이후인지 검증
-    if ($startDate > $endDate) {
-      return false;
-    }
-
-    // 5-3. 트레젝션 시작
-    if (!$this->tripsRepository->beginTransaction()) {
-      return false;
-    }
-
-    // 5-4. 여행 생성
-    $tripId = $this->tripsRepository->insertTrip($userId, $regionId, $title, $startDate, $endDate);
-    // 5-5. 여행 생성 실패 시 롤백 후 false 반환
-    if ($tripId === false) {
-      $this->tripsRepository->rollBack();
-      return false;
-    }
-
-    // 5-6. tripdays 자동 생성
-    $dayCount = Date::calcInclusiveDays($startDate, $endDate);
-    // 5-7. dayCount가 1 이하이면 롤백 후 false 반환
-    if ($dayCount <= 0) {
-      $this->tripsRepository->rollBack();
-      return false;
-    }
-
-    // 5-7. 여행 일자 수 만큼 tripdays 생성
-    for ($dayNo = 1; $dayNo <= $dayCount; $dayNo++) {
-      // 실패 시 롤백 후 false 반환
-      if (!$this->tripsRepository->insertTripDay($tripId, $dayNo)) {
-        $this->tripsRepository->rollBack();
-        return false;
+  // 1. Trip 생성
+  // - 실패시 HttpException 발생
+  public function createTrip(
+    int $userId, 
+    int $regionId, 
+    string $title, 
+    string $startDate, 
+    string $endDate)
+    : int {
+      // 1-1. 일수 계산 
+      // - 날짜 형식 controller에서 수행
+      $dayCount = Date::calcInclusiveDays($startDate, $endDate);
+      if ($dayCount <= 0) {
+        throw new HttpException(500, 'INVALID_DATE_RANGE', '유효하지 않은 날짜 범위입니다.'); 
       }
-    }
 
-    // 5-8. 커밋이 실패하면 롤백 후 false 반환
-    if (!$this->tripsRepository->commit()) {
-      $this->tripsRepository->rollBack();
-      return false;
-    }
+      try {
+        // 1-2. 트랜잭션 시작
+        $tripId = $this->transaction(function(PDO $pdo) use ($userId, $regionId, $title, $startDate, $endDate, $dayCount) {
+          
+          // 1-3. TripsRepository의 insertTrip 메서드 호출
+          $tripId = $this->tripsRepository->insertTrip(
+            $userId, 
+            $regionId, 
+            $title, 
+            $startDate, 
+            $endDate
+          );
 
-    // 5-9. 여행 생성 성공 시 tripId 반환
-    return $tripId;
-   
-  }
+          // 1-4. dayCount 수만큼 TripDay 생성 (insertTripDay 호출)
+          for ($dayNo = 1; $dayNo <= $dayCount; $dayNo++) {
+            if (!$this->tripsRepository->insertTripDay($tripId, $dayNo)){
+              throw new DbException('TRIP_DAY_INSERT_FAILED', '여행 일자 생성에 실패했습니다.');
+            }
+          }
+          // 1-5. 생성된 tripId 반환
+          return $tripId;
+        });
 
-  // 6. trip_id로 여행 단건 조회 메서드
-  public function findTripById(int $tripId, int $userId ): array|false {
-   // 6-1. tripId가 0 이하이면 false 반환
-    if ($tripId <= 0) {
-      return false;
-    }
-   // 6-2. TripsRepository의 findTripById 메서드 호출
-   $trip = $this->tripsRepository->findTripById($tripId, $userId);
-   // 6-3. 조회 실패 시 false 반환
-    if ($trip === null) {
-      return false;
-    }
-   // 6-4. 조회 성공 시 여행 정보 배열 반환
-    return $trip;
-  }
+        // 1-6. 최종 생성된 tripId 반환
+        return $tripId;
 
-  // 7. 여행 목록 조회 메서드
-  public function findTrips(int $userId, int $page, int $size): array|false {
-    // 7-1. userId가 0 이하이거나 페이지나 크기가 1 이하이면 false 반환
-    if ($userId <= 0 || $page <= 0 || $size <= 0) {
-      return false;
-    }
-    // 7-2. TripsRepository의 findTrips 메서드 호출
-    $trips = $this->tripsRepository->findTripsByUserId($userId, $page, $size);
-
-    // 7-4. 조회 성공 시 여행 목록 배열 반환
-    return $trips;
-
-  }
-
-  // 8. 여행 수정 메서드
-  public function updateTrip(int $userId, int $tripId, int $regionId, string $title, string $startDate, string $endDate): bool {
-    // 8-1. tripId가 0 이하이면 false 반환
-    if ($tripId <= 0) {
-      return false;
-    }
-
-    // 8-2. 날짜 형식 검증 
-    if (!Date::isValidDateYmd($startDate) || !Date::isValidDateYmd($endDate)) {
-      return false;
-    }
-
-    // 8-3. 시작일이 종료일보다 이후인지 검증 
-    if ($startDate > $endDate) {
-      return false;
-    }
-
-    // 8-4. dayCount 계산 (종료일 - 시작일 + 1)
-    $dayCount = Date::calcInclusiveDays($startDate, $endDate);
-
-    // 8-5. 트랜잭션 시작
-    if (!$this->tripsRepository->beginTransaction()) {
-      // 시작 실패 시 false 반환
-      return false;
-    }
-
-    // 8-6. TripsRepository의 updateTrip 메서드 호출 (기본정보 수정)
-    if (!$this->tripsRepository->updateTrip($userId, $tripId, $regionId, $title, $startDate, $endDate)) {
-      // // 8-7. 업데이트 실패 시 롤백 후 false 반환
-      $this->tripsRepository->rollBack();
-      return false;
-    }
-
-    // 8-8. 기존 TripDay 전부 삭제 (deleteTripDaysByTripId 호출)
-    if (!$this->tripsRepository->deleteTripDaysByTripId( $tripId)) {
-      // 8-9. 삭제 실패 시 롤백 후 false 반환
-      $this->tripsRepository->rollBack();
-      return false;
-    }
-
-    // 8-10. dayCount가 1 이상인지 검증 (1 미만이면 롤백 후 false 반환)
-    if ($dayCount <= 0) {
-      $this->tripsRepository->rollBack();
-      return false;
-    }
-
-    // 8-11. dayCount 수만큼 TripDay 새로 생성 (insertTripDay 호출, 실패 시 롤백 후 false 반환)
-    for ($dayNo = 1; $dayNo <= $dayCount; $dayNo++) {
-      // 실패 시 롤백 후 false 반환
-      if (!$this->tripsRepository->insertTripDay($tripId, $dayNo)){
-        $this->tripsRepository->rollBack();
-        return false;
+      } catch (DbException $e) {
+        throw new HttpException(500, 'TRIP_CREATION_FAILED', '여행 생성에 실패했습니다.', $e);
       }
-    }
+  }
 
-    // 8-12. 커밋이 실패하면 롤백 후 false 반환
-    if (!$this->tripsRepository->commit()) {
-      $this->tripsRepository->rollBack();
-      return false;
-    }
+  // 2. Trip 단건 조회
+  // - 실패시 HttpException 발생
+  public function findTripById(int $tripId, int $userId ): array {
+    try {
+      // 2-1. TripsRepository의 findTripById 메서드 호출
+      $trip = $this->tripsRepository->findTripById($tripId, $userId);
+      if ($trip === null) {
+        throw new HttpException(404, 'TRIP_NOT_FOUND', '해당 여행을 찾을 수 없습니다.');
+      }
+      
+      // 2-2. 조회 성공 시 여행 정보 배열 반환
+      return $trip;
 
-    // 8-13. 모든 작업이 성공하면 true 반환
-    return true;
+    } catch (DbException $e) {
+      throw new HttpException(500, 'TRIP_RETRIEVAL_FAILED', '여행 조회에 실패했습니다.', $e);
+    }
+  }
+
+  // 3. Trip 목록 조회
+  // - 페이지네이션 지원
+  public function findTrips(
+    int $userId, 
+    int $page, 
+    int $size,
+    ?string $sort)
+    : array {
+      try {
+        // 3-1. TripsRepository의 findTripsByUserId 메서드 호출
+        return $this->tripsRepository->findTripsByUserId(
+          $userId,
+          $page,
+          $size,
+          $sort
+        );
+      
+      } catch (DbException $e) {
+        throw new HttpException(500, 'TRIPS_RETRIEVAL_FAILED', '여행 목록 조회에 실패했습니다.', $e);
+      }
+  }
+
+  // 4.Trip 수정 메서드
+  // - 기본정보 갱신 -> 기존 TripDay 전부 삭제 -> TripDay 새로 생성
+  // - 실패시 HttpException 발생
+  public function updateTrip(
+    int $userId, 
+    int $tripId, 
+    int $regionId, 
+    string $title, 
+    string $startDate, 
+    string $endDate
+    ): bool {
+      // 4-1. 일수 계산 
+      // - 날짜 형식 controller에서 수행
+      $dayCount = Date::calcInclusiveDays($startDate, $endDate);
+      if ($dayCount <= 0) {
+        throw new HttpException(500, 'INVALID_DATE_RANGE', '유효하지 않은 날짜 범위입니다.'); 
+      }
+
+      try {
+        // 4-2. 트랜잭션 시작
+        return $this->transaction(function(PDO $pdo) use ($userId, $tripId, $regionId, $title, $startDate, $endDate, $dayCount) {
+          // 4-3. TripsRepository의 updateTrip 메서드 호출
+          $updated = $this->tripsRepository->updateTrip(
+            $userId, 
+            $tripId, 
+            $regionId, 
+            $title, 
+            $startDate, 
+            $endDate
+          );
+          if (!$updated) {
+            throw new DbException('TRIP_UPDATE_FAILED', '여행 기본정보 수정에 실패했습니다.');
+          }
+
+          // 4-4. 기존 TripDay 전부 삭제
+          if (!$this->tripsRepository->deleteTripDaysByTripId($tripId)) {
+            throw new DbException('TRIP_DAY_DELETION_FAILED', '기존 여행 일자 삭제에 실패했습니다.');
+          }
+
+          // 4-5. dayCount 수만큼 TripDay 새로 생성
+          for ($dayNo = 1; $dayNo <= $dayCount; $dayNo++) {
+            if (!$this->tripsRepository->insertTripDay($tripId, $dayNo)){
+              throw new DbException('TRIP_DAY_INSERT_FAILED', '여행 일자 생성에 실패했습니다.');
+            }
+          }
+          // 4-6. 모든 작업 성공 시 true 반환
+          return true;
+        });
+      } catch (DbException $e) {
+        throw new HttpException(500, 'TRIP_UPDATE_FAILED', '여행 수정에 실패했습니다.', $e);
+      }
   } 
 
-  // 9. 여행 삭제 메서드
+  // 5. Trip 삭제
+  // - TripDay 삭제 -> Trip 기본정보 삭제
+  // - 실패시 HttpException 발생
   public function deleteTrip(int $userId, int $tripId): bool {
-    // 9-1. tripId가 0 이하이면 false 반환
-    if ($tripId <= 0) {
-      return false;
-    }
+    try {
+      // 5-1. 트랜잭션 시작
+      return $this->transaction(function(PDO $pdo) use ($userId, $tripId) {
+        // 5-2. TripsRepository의 deleteTripDaysByTripId 메서드 호출
+        if (!$this->tripsRepository->deleteTripDaysByTripId($tripId)) {
+          throw new DbException('TRIP_DAY_DELETION_FAILED', '여행 일자 삭제에 실패했습니다.');
+        }
 
-    // 9-2. 트랜잭션 시작
-    if (!$this->tripsRepository->beginTransaction()) {
-      return false;
-    }
+        // 5-3. TripsRepository의 deleteTrip 메서드 호출
+        $deleted = $this->tripsRepository->deleteTrip($userId, $tripId);
+        if (!$deleted) {
+          throw new DbException('TRIP_DELETION_FAILED', '여행 삭제에 실패했습니다.');
+        }
 
-    // 9-3. TripsRepository의 deleteTripDaysByTripId 메서드 호출 (여행 일자 삭제)
-    if (!$this->tripsRepository->deleteTripDaysByTripId($tripId)) {
-      // 9-4. 삭제 실패 시 롤백 후 false 반환
-      $this->tripsRepository->rollBack();
-      return false;
-    }
+        // 5-4. 모든 작업 성공 시 true 반환
+        return true;
+      });
 
-    // 9-5. TripsRepository의 deleteTrip 메서드 호출 (여행 기본정보 삭제)
-    if (!$this->tripsRepository->deleteTrip($userId, $tripId)) {
-      // 9-6. 삭제 실패 시 롤백 후 false 반환
-      $this->tripsRepository->rollBack();
-      return false;
+    } catch (DbException $e) {
+      throw new HttpException(500, 'TRIP_DELETION_FAILED', '여행 삭제에 실패했습니다.', $e);
     }
-
-    // 9-7. 커밋이 실패하면 롤백 후 false 반환
-    if (!$this->tripsRepository->commit()) {
-      $this->tripsRepository->rollBack();
-      return false;
-    }
-
-    // 9-8. 모든 작업이 성공하면 true 반환
-    return true;
   }
 }

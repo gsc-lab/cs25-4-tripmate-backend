@@ -1,188 +1,194 @@
 <?php
+declare(strict_types=1);
+
 namespace Tripmate\Backend\Modules\Trips\Controllers;
 
-use Tripmate\Backend\Common\Middleware\AuthMiddleware;
 use Tripmate\Backend\Core\Controller;
-use Tripmate\Backend\Modules\Trips\Services\TripsService;
 use Tripmate\Backend\Core\Request;
 use Tripmate\Backend\Core\Response;
 use Tripmate\Backend\Core\Validator;
+use Tripmate\Backend\Modules\Trips\Services\TripsService;
 
-// 1. TripController 클래스 정의
-class TripsController extends Controller {
-  // 2. 프러퍼티 정의
-  public TripsService $tripsService;
-  public Validator $validator;
+final class TripsController extends Controller
+{
+    private TripsService $tripsService;
+    private Validator $validator;
 
-  // 3. 생성자에서 Request, Response, TripsService 초기화 
-  public function __construct(Request $request, Response $response) {
-    // 3-1. 부모 생성자 호출
-    parent::__construct($request, $response);
-    // 3-2. TripsService 인스턴스 생성
-    $this->tripsService = new TripsService();
-    // 3-3. Validator 인스턴스 생성
-    $this->validator = new Validator();
-  }
-
-  // 4. 여행 생성 : POST /api/v1/trips
-  // 4-1. createTrip 메서드 정의
-  public function createTrip() {
-    // 4-1. 요청 데이터 가져오기
-    $body = $this->request->body ?? [];
-
-    // 4-2. 유효성 검증
-    $validationResult = $this->validator->validateTrip($body);
-    if ($validationResult !== true) {
-        return $this->response->error('VALIDATION_ERROR', $validationResult, 422);
+    public function __construct(Request $request, Response $response)
+    {
+        parent::__construct($request, $response);
+        $this->tripsService = new TripsService();
+        $this->validator    = new Validator();
     }
 
-    // 4-3. 토큰 검증 및 user_id 추출
-    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 1. Trip 생성 : POST /api/v1/trips
+    public function createTrip(): void
+    {
+        $this->run(function () {
+            // 1-1. 요청 바디
+            $body = (array) $this->request->body();
 
-    // 4-4. TripsService의 createTrip 호출
-    $tripId = $this->tripsService->createTrip(
-        (int)$userId,
-        (int)$body['region_id'],
-        $body['title'],
-        $body['start_date'],
-        $body['end_date']
-    );
+            // 1-2. 유효성 검사 (Validator::validateTrip)
+            $this->validator->validateTrip($body);
 
-    // 4-5. 실패 시 응답
-    if ($tripId === false) {
-        return $this->response->error('CREATION_FAILED', '여행 생성에 실패했습니다.', 500);
+            // 1-3. 사용자 식별
+            $userId = $this->getUserId();
+
+            // 1-4. 서비스 호출
+            $tripId = $this->tripsService->createTrip(
+                $userId,
+                (int) $body['region_id'],
+                (string) $body['title'],
+                (string) $body['start_date'],
+                (string) $body['end_date']
+            );
+
+            // 1-5. 실패 처리
+            if ($tripId <= 0) {
+                $this->response->error('CREATION_FAILED', '여행 생성에 실패했습니다.', 500);
+                return null; // run()에 "이미 응답 완료" 알림
+            }
+
+            // 1-6. 성공: 201 + Location 헤더
+            $this->response->setHeader('Location', "/api/v1/trips/{$tripId}")
+                           ->created([
+                               'trip_id'    => (int) $tripId,
+                               'title'      => (string) $body['title'],
+                               'region_id'  => (int) $body['region_id'],
+                               'start_date' => (string) $body['start_date'],
+                               'end_date'   => (string) $body['end_date'],
+                           ]);
+            return null; // 이중 응답 방지
+        });
     }
 
-    // 4-6. 성공 시 응답 (생성된 trip_id 반환)
-    return $this->response->success(
-        ['trip_id' => $tripId],
-        201
-    );
-  }
+    // 2. Trip 목록 : GET /api/v1/trips?page&size&sort
+    public function getTrips(): void
+    {
+        $this->run(function () {
+            // 2-1. 페이징 파싱
+            ['page' => $page, 'size' => $size, 'sort' => $sort] = $this->parsePaging();
 
-  // 5. 여행 목록 조회 : GET /api/v1/trips -> 페이지네이션 적용
-  // 5-1. getTrips 메서드 정의 
-  public function getTrips() {
-    // 5-1. 요청 쿼리 가져오기
-    $query = $this->request->query ?? [];
+            // 2-2. 조회
+            $result = $this->tripsService->findTrips(
+                $this->getUserId(),
+                (int) $page,
+                (int) $size,
+                (string) $sort
+            );
 
-    // 5-2. 페이지네이션 기본값 설정
-    $page = isset($query['page']) && ctype_digit($query['page']) && (int)$query['page'] > 0 ? (int)$query['page'] : 1;
-    $perPage = isset($query['per_page']) && ctype_digit($query['per_page']) && (int)$query['per_page'] > 0 ? (int)$query['per_page'] : 20;
+            // 2-3. 실패 처리
+            if ($result === false) {
+                $this->response->error('RETRIEVAL_FAILED', '여행 목록 조회에 실패했습니다.', 500);
+                return null;
+            }
 
-    // 5-3. 토큰 검증 및 user_id 추출
-    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
-    
-    // 5-4. TripsService의 findTrips 호출
-    $trips = $this->tripsService->findTrips($userId, $page, $perPage);
+            // 2-4. data/meta 분리 (스펙)
+            $items = $result['items'] ?? [];
+            $meta  = [
+                'page'  => (int) ($result['page']  ?? $page),
+                'size'  => (int) ($result['size']  ?? $size),
+                'total' => (int) ($result['total'] ?? 0),
+            ];
 
-    // 5-5. 실패 시 응답
-    if ($trips === false) {
-        return $this->response->error('RETRIEVAL_FAILED', '여행 목록 조회에 실패했습니다.', 500);
+            // 2-5. 성공 응답
+            $this->response->success($items, $meta);
+            return null;
+        });
     }
 
-    // 5-6. 성공 시 응답 (여행 목록 및 페이지네이션 정보 반환)
-    return $this->response->success([
-        'data' => $trips['items'],
-        'pagination' => [
-            'page' =>  $trips['page'],
-            'per_page' => $trips['per_page'],
-            'total' => $trips['total'], 
-            'total_pages' => $trips['total_pages'],
-        ],
-      ], 200);
-    
-   
-  }
+    // 3. Trip 단건 : GET /api/v1/trips/{trip_id}
+    public function showTrip(int $tripId): void
+    {
+        $this->run(function () use ($tripId) {
+            // 3-1. 경로 파라미터 검증
+            if ($tripId <= 0) {
+                $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
+                return null;
+            }
 
-  // 6. 여행 단건 조회 : GET /api/v1/trips/{trip_id}
-  // 6-1. showTrip 메서드 정의
-  public function showTrip(int $tripId) {
-    
-    // 6-1. trip_id가 없으면 400 응답
-    if ($tripId <= 0) {
-      return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
-    }
-    // 6-2. 토큰 검증 및 user_id 추출
-    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+            // 3-2. 조회
+            $trip = $this->tripsService->findTripById((int) $tripId, $this->getUserId());
 
-    // 6-2. TripsService의 findTripById 호출
-     $trip = $this->tripsService->findTripById($tripId, (int)$userId);
+            // 3-3. 없으면 404
+            if (empty($trip)) {
+                $this->response->error('NOT_FOUND', '해당 여행을 찾을 수 없습니다.', 404);
+                return null;
+            }
 
-    // 6-3. 조회 실패 시 404 응답
-    if ($trip === false) {
-      return $this->response->error('NOT_FOUND', '해당 trip_id의 여행을 찾을 수 없습니다.', 404);
-    }
-    // 6-4. 성공 시 여행 데이터 반환
-    return $this->response->success($trip, 200);
-  }
-
-  // 7. 여행 수정 : PUT /api/v1/trips/{trip_id}
-  // 7-1. updateTrip 메서드 정의
-  public function updateTrip(int $tripId) {
-    // 7-2. trip_id가 없으면 400 응답
-    if ($tripId <= 0) {
-      return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
+            // 3-4. 성공
+            $this->response->success($trip);
+            return null;
+        });
     }
 
-    // 7-3. 요청 데이터 가져오기
-    $body = $this->request->body ?? [];
+    // 4. Trip 수정 : PUT /api/v1/trips/{trip_id}
+    public function updateTrip(int $tripId): void
+    {
+        $this->run(function () use ($tripId) {
+            // 4-1. 경로 파라미터 검증
+            if ($tripId <= 0) {
+                $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
+                return null;
+            }
 
-    // 7-4. 유효성 검증
-    if (empty($body['region_id']) || empty($body['title']) || empty($body['start_date']) || empty($body['end_date'])) {
-      // 7-5. 필수 값 누락 시 422 응답
-      return $this->response->error('VALIDATION_ERROR', '필수 값이 누락되었습니다.', 422);
+            // 4-2. 요청 바디
+            $body = (array) $this->request->body();
+
+            // 4-3. 유효성 검사 (전체 업데이트 기준)
+            // 부분 업데이트를 허용하려면 Validator에 validateTripUpdate 추가 후 분기
+            $this->validator->validateTrip($body);
+
+            // 4-4. 서비스 호출
+            $updated = $this->tripsService->updateTrip(
+                $this->getUserId(),
+                (int) $tripId,
+                (int) $body['region_id'],
+                (string) $body['title'],
+                (string) $body['start_date'],
+                (string) $body['end_date']
+            );
+
+            // 4-5. 실패
+            if ($updated === false) {
+                $this->response->error('UPDATE_FAILED', '여행 수정에 실패했습니다.', 500);
+                return null;
+            }
+
+            // 4-6. 성공
+            $this->response->success([
+                'trip_id'    => (int) $tripId,
+                'title'      => (string) $body['title'],
+                'region_id'  => (int) $body['region_id'],
+                'start_date' => (string) $body['start_date'],
+                'end_date'   => (string) $body['end_date'],
+            ]);
+            return null;
+        });
     }
 
-    // 7-6. 토큰 검증 및 user_id 추출
-    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
+    // 5. Trip 삭제 : DELETE /api/v1/trips/{trip_id}
+    public function deleteTrip(int $tripId): void
+    {
+        $this->run(function () use ($tripId) {
+            // 5-1. 경로 파라미터 검증
+            if ($tripId <= 0) {
+                $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
+                return null;
+            }
 
-    // 7-7. TripsService의 updateTrip 호출
-     $updated = $this->tripsService->updateTrip(
-        $userId,
-        $tripId,
-        (int)$body['region_id'],
-        (string)$body['title'],
-        (string)$body['start_date'],
-        (string)$body['end_date']
-    );
+            // 5-2. 삭제 실행
+            $deleted = $this->tripsService->deleteTrip($this->getUserId(), (int) $tripId);
 
-    // 7-8. 수정 실패 시 404 응답
-    if ($updated === false) {
-      return $this->response->error('UPDATE_FAILED', '여행 수정에 실패했습니다.', 404);
+            // 5-3. 실패 처리
+            if ($deleted === false) {
+                $this->response->error('DELETION_FAILED', '여행 삭제에 실패했습니다.', 500);
+                return null;
+            }
+
+            // 5-4. 성공: 204 No Content
+            $this->response->noContent();
+            return null;
+        });
     }
-
-    // 7-9. 성공 시 응답 (수정된 trip_id 반환)
-    return $this->response->success(
-      ['trip_id' => $tripId],
-      200
-    );
-  }
-
-  // 8. 여행 삭제 : DELETE /api/v1/trips/{trip_id}
-  // 8-1. deleteTrip 메서드 정의
-  public function deleteTrip($tripId) {
-    // 8-2. trip_id가 없으면 400 응답
-    if ($tripId <= 0) {
-      return $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
-    }
-
-    // 8-3. 토큰 검증 및 user_id 추출
-    $userId = AuthMiddleware::tokenResponse($this->request); // 검증 실패시 error
-
-    // 8-4. TripsService의 deleteTrip 호출
-    $deleted = $this->tripsService->deleteTrip($userId, (int)$tripId);
-
-    // 8-5. 삭제 실패 시 404 응답
-    if ($deleted === false) {
-      return $this->response->error('DELETION_FAILED', '여행 삭제에 실패했습니다.', 404);
-    }
-
-    // 8-6. 성공 시 응답 (삭제된 trip_id 반환)
-    return $this->response->success(
-      ['trip_id' => $tripId],
-      200
-    );
-  }
-
 }
