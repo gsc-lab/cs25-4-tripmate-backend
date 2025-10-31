@@ -2,208 +2,199 @@
 // namespace 작성
 namespace Tripmate\Backend\Modules\Trips\Repositories;
 
-// 1. DB 클래스 로드 및 pdo 사용
+// use 작성
 use Tripmate\Backend\Core\DB;
+use Tripmate\Backend\Core\Repository;
+use Tripmate\Backend\Common\Exceptions\DbException;
 use PDO;
 
-// 2. TripsRepository 클래스 정의
-class TripsRepository {
+// TripsRepository class 정의
+// - 공통 Repository 상속 받아 사용
+// - 모든 DB 예외는 DbException으로 래핑하여 던짐
+class TripsRepository extends Repository {
 
-
-    // 3. 생성자에서 DB 접속 및 pdo 초기화
-    public PDO $pdo;
-
-    public function __construct() {
-      // 3-1. DB 객체 생성 
-      $db = new DB();
-      // 3-2. db 접속
-      $this->pdo = $db->getConnection();
+    // 생성자에서 DB 접속 및 pdo 초기화
+    public function __construct(?PDO $pdo = null) {
+        // 주입 된 pdo가 없으면 DB::conn() 사용
+        parent::__construct($pdo ?? DB::conn());
     }
     
-    // 4. 트레젝션 제어 메서드
-    public function beginTransaction() :  bool {
-        // 4-1. 실패 시 false 반환
-        return $this->pdo->beginTransaction();
-    }
+    // 1. Trip 생성
+    // - 성공시 삽입된 trip_id 반환, 실패시 false 반환
+    public function insertTrip(
+      int $userId, 
+      int $regionId, 
+      string $title, 
+      string $startDate, 
+      string $endDate
+      ): int {
+        try {
+            // 1-1. SQL 작성
+            $sql = "
+                INSERT INTO Trip 
+                (user_id, region_id, title, start_date, end_date, created_at, updated_at)
+                VALUES (:user_id, :region_id, :title, :start_date, :end_date, NOW(), NOW())
+                ";
 
-    // 5. 커밋 제어 메서드
-    public function commit() : bool {
-        // 5-1. 트레젝션이 실행중인지 확인
-        if ($this->pdo->inTransaction()) {
-            // 5-2. 실행중이라면 commit 실행
-            return $this->pdo->commit();
+            // 1-2. 쿼리 준비
+            $this->execute($sql, [
+                'user_id' => $userId,
+                'region_id' => $regionId,
+                'title' => $title,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]);
+
+            // 1-3. 삽입된 trip_id 조회
+            // - 성공시 trip_id 반환
+            // - 실패시 DbException 발생
+            $id = $this->lastInsertId();
+            if ($id === false) {
+                throw new DbException('TRIP_INSERT_NO_ID', '여행 생성 후 ID 조회에 실패했습니다.');
+            }
+            return $id;
+
+        } catch(\Throwable $e) {
+            throw new DbException('TRIP_INSERT_FAILED', '여행 생성 중 데이터베이스 오류가 발생했습니다.',  $e);
         }
-        // 5-3. 실행중이 아니라면 false 반환
-        return false;
     }
 
-    // 6. 롤백 제어 메서드
-    public function rollBack() : bool {
-        // 6-1. 트레젝션이 실행중인지 확인
-        if ($this->pdo->inTransaction()) {
-            // 6-2. 실행중이라면 rollBack 실행
-            return $this->pdo->rollBack();
-        }
-        // 6-3. 실행중이 아니라면 false 반환
-        return false;
-    }
-
-    // 1. 여행 생성 메서드
-    public function insertTrip(int $userId, int $regionId, string $title, string $startDate, string $endDate): int|false {
-      // 1-1. SQL 작성
-      $sql = "INSERT INTO Trip (user_id, region_id, title, start_date, end_date, created_at, updated_at)
-              VALUES (:user_id, :region_id, :title, :start_date, :end_date, NOW(), NOW())";
-      // 1-2. 쿼리 준비
-      $stmt = $this->pdo->prepare($sql);
-      // 쿼리 준비 실패 시 false 반환
-      if ($stmt === false) {
-        return false;
-      }
-      // 1-3. 쿼리 실행
-      $success = $stmt->execute([
-        ':user_id' => $userId,
-        ':region_id' => $regionId,
-        ':title' => $title,
-        ':start_date' => $startDate,
-        ':end_date' => $endDate,
-      ]);
-     
-      // 1-4. 실패 시 false 반환
-      if ($success === false) {
-        return false;
-      }
-
-      // 1-5. 성공 시 마지막으로 삽입된 ID 반환
-      $id = (int)$this->pdo->lastInsertId(); // (int)로 형변환 후 마지막으로 삽입된 ID 반환\
-      // 1-6. ID가 0 이하인 경우 false 반환
-      if ($id <= 0) {
-        return false;
-      }// 1-7. 성공시 ID 반환
-        return $id;
-    }
-
-    // 2. trip id로 여행 조회 
+    // 2. Trip 단건 조회
     // 조회 성공시 배열 반환, 실패시(존재하지 않을 경우) null 반환
-    public function findTripById(int $tripId, int $userId): array|null {
+    public function findTripById(int $tripId, int $userId): ?array 
+    {
+      try {
         // 2-1. SQL 작성
-        $sql = "SELECT trip_id, user_id, region_id, title, start_date, end_date, created_at, updated_at
-                FROM Trip
-                WHERE trip_id = :trip_id AND user_id = :user_id
-                LIMIT 1";
-        // 2-2. 쿼리 준비
-        $stmt = $this->pdo->prepare($sql);
-        // 쿼리 준비 실패 시 null 반환
-        if ($stmt === false) {
-          return null;
-        }
-        // 2-3. 쿼리 실행
-        $success = $stmt->execute([':trip_id' => $tripId, ':user_id' => $userId]);
-        // 2-4. 실패 시 null 반환
-        if ($success === false) {
-          return null;
-        }
+        $sql ="
+            SELECT 
+              trip_id, user_id, region_id, title, 
+              start_date, end_date, created_at, updated_at
+            FROM Trip
+            WHERE trip_id = :trip_id AND user_id = :user_id
+            LIMIT 1
+        ";
 
-        // 2-5. 결과 가져오기
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        // 2-6. 결과가 없으면 null 반환
-        if ($row === false) {
-          return null;
-        }
-        return $row;
+        // 2-2. 쿼리 실행 및 단건 조회
+        return $this->fetchOne($sql, [
+          'trip_id' => $tripId,
+          'user_id' => $userId,
+        ]);
+
+      }catch(\Throwable $e) {
+        throw new DbException('TRIP_FETCH_FAILED', '여행 조회 중 데이터베이스 오류가 발생했습니다.',  $e);
+      }
+        
     } 
 
-    // 3. tripday 생성 메서드 (성공시 true, 실패시 false 반환)
+    // 3. tripday 생성 
+    // - 성공시 true, 실패시 false 반환
     public function insertTripDay(
         int $tripId,
         int $dayNo,
         string $memo = ''
     ): bool {
+      try {
         // 3-1. SQL 작성
         $sql = "
-            INSERT INTO TripDay (trip_id, day_no, memo, created_at, updated_at)
+            INSERT INTO TripDay 
+            (trip_id, day_no, memo, created_at, updated_at)
             VALUES (:trip_id, :day_no, :memo, NOW(), NOW())
         ";
-        // 3-2. 쿼리 준비
-        $stmt = $this->pdo->prepare($sql);
-        // 쿼리 준비 실패 시 false 반환
-        if ($stmt === false) {
-            return false;
-        }
-        // 3-3. 쿼리 실행
-        return $stmt->execute([
-            ':trip_id' => $tripId,
-            ':day_no'  => $dayNo,
-            ':memo'    => $memo,
-        ]) !== false; // 3-4. 성공시 true, 실패시 false 반환
+
+        // 3-2. 쿼리 실행 및 성공 여부 반환
+        // - 영향 받은 행(row) 수가 0보다 크면 성공
+        return $this->execute($sql, [
+          'trip_id' => $tripId,
+          'day_no' => $dayNo,
+          'memo' => $memo,
+        ]) > 0;
+
+      } catch(\Throwable $e) {
+        throw new DbException('TRIPDAY_INSERT_FAILED', '여행일정 생성 중 데이터베이스 오류가 발생했습니다.',  $e);
+      }
     }
 
-    // 4. tripId로 trip 목록 조회 (성공시 배열, 실패시 null 반환)
-    public function findTripsByUserId(int $userId, int $page, int $size): array {
-      // 4-1. page와 size을 정수로 변환
-      $page = (int)$page;
-      $size = (int)$size;
-      
-      // 4-2. 음수 방지 
-      if ($page <= 0) $page = 1; // 페이지는 1부터 시작
-      if ($size <= 0) $size = 20; // 기본 크기는 20
+    // 4. Trip 목록 조회 (페이지네이션)
+    // - 경계값 보정은 Controller에서 처리
+    // - 성공시 배열 반환 , 실패시 null 반환
+    public function findTripsByUserId(
+      int $userId, 
+      int $page, 
+      int $size, 
+      ?string $sort = null
+    ): array {
+      try {
+        // Cnotroller에서 page, size 보장
+        // offset 계산
+        $offset = ($page - 1) * $size;
 
-      // 4-3 offset 계산
-      $offset = ($page - 1) * $size;
+        // 4-1. 총 개수 조회
+        $total = (int)$this->query(
+          "SELECT COUNT(*) FROM Trip WHERE user_id = :user_id", 
+          ['user_id' => $userId]
+        )->fetchColumn();
+        
+        // 4-2. 정렬 화이트리스트
+        $fieldMap = [
+          'created_at' => 't.created_at',
+          'start_date' => 't.start_date',
+          'end_date' => 't.end_date',
+          'title' => 't.title',
+          'region_id' => 't.region_id',
+        ];
+        $orderBy = 't.created_at DESC'; // 기본 정렬
 
-      // 4-4. 총 페이지 수 계산
-      $sqlCount = "SELECT COUNT(*) FROM Trip WHERE user_id = :user_id";
-      $stmtCount = $this->pdo->prepare($sqlCount);
-      // 4-5. 쿼리 준비 실패 시 빈 배열 반환
-      if ($stmtCount === false) {
-         return [
-          'items' => [],
-          'total' => 0,
+        // 4-3. 정렬 파라미터가 유효하면 적용
+        if ($sort !== null && $sort !== '') {
+          $direction = 'ASC';
+          $field = $sort;
+
+          if (strpos($sort, ':') !== false) {
+            [$field, $dirRaw] = explode(':', $sort, 2);
+            $direction = strtoupper($dirRaw) === 'DESC' ? 'DESC' : 'ASC';
+          } else if ($sort[0] === '-') {
+            $field = substr($sort, 1);
+            $direction = 'DESC';
+          }
+
+          if (isset($fieldMap[$field])){
+            $orderBy = $fieldMap[$field] . ' ' . $direction;
+          }
+        } 
+
+        // 4-4. SQL 작성
+        // - region 이름도 함께 조회
+        $sql = "
+          SELECT 
+            t.trip_id, t.user_id, t.region_id, t.title, 
+            t.start_date, t.end_date, t.created_at, t.updated_at,
+            r.name AS region_name
+          FROM Trip AS t
+          LEFT JOIN Region AS r ON t.region_id = r.region_id
+          WHERE t.user_id = :user_id
+          ORDER BY {$orderBy}
+          LIMIT {$size} OFFSET {$offset}
+        ";
+
+        // 4-5. 쿼리 실행 및 다건 조회
+        $items = $this->fetchAll($sql, ['user_id' => $userId]);
+
+        // 4-6. 페이지네이션 정보 반환
+        return [
+          'items' => $items,
+          'total' => $total,
           'page' => $page,
           'per_page' => $size,
-          'total_pages' => 0,
+          'total_pages' => (int)ceil($total / $size),
         ];
-      }
 
-      $okCount = $stmtCount->execute([':user_id' => $userId]);
-      $total = $okCount ? (int)$stmtCount->fetchColumn() : 0;
-
-      // 4-6. SQL 작성
-      $sql = "
-        SELECT t.trip_id, t.user_id, t.region_id, t.title, t.start_date, t.end_date, t.created_at, t.updated_at,
-        r.name AS region_name
-        FROM Trip AS t
-        LEFT JOIN Region AS r ON t.region_id = r.region_id
-        WHERE t.user_id = :user_id
-        ORDER BY t.created_at DESC
-        LIMIT {$size} OFFSET {$offset}
-      ";
-      // 4-4. 쿼리 준비
-      $stmt = $this->pdo->prepare($sql);
-      // 4-5. 쿼리 준비 실패 시 빈 배열 반환
-      if ($stmt === false) {
-        return [
-        'items' => [],
-        'total' => $total,
-        'page' => $page,
-        'per_page' => $size,
-        'total_pages' => (int)ceil($total / max($size, 1)),
-      ];
+      } catch(\Throwable $e) {
+        throw new DbException('TRIP_LIST_FETCH_FAILED', '여행 목록 조회 중 데이터베이스 오류가 발생했습니다.',  $e);
       }
-      // 4-6. 쿼리 실행
-      $ok = $stmt->execute([':user_id' => $userId]);
-      $rows = $ok ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
-      
-      // 4-7. 페이지네이션 정보 반환
-      return [
-        'items' => $rows,
-        'total' => $total,
-        'page' => $page,
-        'per_page' => $size,
-        'total_pages' => (int)ceil($total / max($size, 1)), // size가 0일 때 나누기 방지
-      ];
     }
 
-    // 5. 여행 수정 메서드 
+    // 5. Trip 수정
+    // - 영행 받은 행(row) 수 > 0 이면 true 반환, 아니면 false 반환
     public function updateTrip(
       int $userId,
       int $tripId,
@@ -212,71 +203,72 @@ class TripsRepository {
       string $startDate,
       string $endDate
     ) : bool {
-      // 5-1. SQL 작성
-      $sql = "
-        UPDATE Trip
-        SET region_id = :region_id,
-            title = :title,
-            start_date = :start_date,
-            end_date = :end_date,
-            updated_at = NOW()
-        WHERE trip_id = :trip_id AND user_id = :user_id
-      ";
-      // 5-2. 쿼리 준비
-      $stmt = $this->pdo->prepare($sql);
-      // 쿼리 준비 실패 시 false 반환
-      if ($stmt === false) {
-        return false;
+      try {
+        // 5-1. SQL 작성
+        $sql = "
+          UPDATE Trip
+          SET region_id = :region_id,
+              title = :title,
+              start_date = :start_date,
+              end_date = :end_date,
+              updated_at = NOW()
+          WHERE trip_id = :trip_id AND user_id = :user_id
+        ";
+
+        // 5-2. 쿼리 실행 및 성공 여부 반환
+        return $this->execute($sql, [
+          'region_id' => $regionId,
+          'title' => $title,
+          'start_date' => $startDate,
+          'end_date' => $endDate,
+          'trip_id' => $tripId,
+          'user_id' => $userId,
+        ]) > 0;
+
+      } catch(\Throwable $e) {
+        throw new DbException('TRIP_UPDATE_FAILED', '여행 수정 중 데이터베이스 오류가 발생했습니다.',  $e);
       }
-      // 5-3. 쿼리 실행 및 성공 여부 반환
-      return $stmt->execute([
-        ':region_id' => $regionId,
-        ':title' => $title,
-        ':start_date' => $startDate,
-        ':end_date' => $endDate,
-        ':trip_id' => $tripId,
-        ':user_id' => $userId,
-      ]) !== false; // 실패시 false 반환
-      
     }
 
-    // 6. Trip 삭제 메서드
-    public function deleteTrip(int $userId, int $tripId) : bool {
-      // 6-1. SQL 작성
-      $sql = "
-        DELETE FROM Trip
-        WHERE trip_id = :trip_id AND user_id = :user_id
-      ";
-      // 6-2. 쿼리 준비
-      $stmt = $this->pdo->prepare($sql);
-      // 쿼리 준비 실패 시 false 반환
-      if ($stmt === false) {
-        return false;
+    // 6. Trip 삭제
+    // - 성공시 true, 실패시 false 반환
+    public function deleteTrip(int $userId, int $tripId) : bool 
+    {
+      try {
+        // 6-1. SQL 작성
+        $sql = "
+          DELETE FROM Trip
+          WHERE trip_id = :trip_id AND user_id = :user_id
+        ";
+
+        // 6-2. 쿼리 실행 및 성공 여부 반환
+        return $this->execute($sql, [
+          'trip_id' => $tripId,
+          'user_id' => $userId,
+        ]) > 0;
+
+      } catch(\Throwable $e) {
+        throw new DbException('TRIP_DELETE_FAILED', '여행 삭제 중 데이터베이스 오류가 발생했습니다.',  $e);
       }
-      // 6-3. 쿼리 실행 및 성공 여부 반환
-      return $stmt->execute([
-        ':trip_id' => $tripId,
-        ':user_id' => $userId,
-      ]) !== false; // 실패시 false 반환
     }
 
-    // 7. TripDay 삭제 메서드 (특정 tripId에 해당하는 TripDay 모두 삭제)
+    // 7. 특정 Trip의 TripDay 모두 삭제
     public function deleteTripDaysByTripId(int $tripId) : bool {
-      // 7-1. SQL 작성
-      $sql = "
-        DELETE FROM TripDay
-        WHERE trip_id = :trip_id
-      ";
-      // 7-2. 쿼리 준비
-      $stmt = $this->pdo->prepare($sql);
-      // 쿼리 준비 실패 시 false 반환
-      if ($stmt === false) {
-        return false;
-      }
-      // 7-3. 쿼리 실행 및 성공 여부 반환
-      return $stmt->execute([
-        ':trip_id' => $tripId,
-      ]) !== false; // 실패시 false 반환
-    }
+      try {
+        // 7-1. SQL 작성
+        $sql = "
+          DELETE FROM TripDay
+          WHERE trip_id = :trip_id
+        ";
 
+        // 7-2. 쿼리 실행 및 성공 여부 반환
+        return $this->execute($sql, [
+          'trip_id' => $tripId,
+        ]) > 0;
+
+      } catch(\Throwable $e) {
+        throw new DbException('TRIPDAY_DELETE_FAILED', '여행일정 삭제 중 데이터베이스 오류가 발생했습니다.',  $e);
+    }
   }
+
+}
