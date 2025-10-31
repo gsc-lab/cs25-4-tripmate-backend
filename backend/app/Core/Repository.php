@@ -73,5 +73,6 @@ abstract class Repository {
     // 10-1. 마지막 삽입된 ID 반환
     return (int)$this->db->lastInsertId();
   }
+  
 }
 
