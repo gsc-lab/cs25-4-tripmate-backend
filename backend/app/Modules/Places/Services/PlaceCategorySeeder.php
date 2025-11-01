@@ -2,14 +2,14 @@
     namespace Tripmate\Backend\Modules\Places\Services;
 
     use Tripmate\Backend\Core\DB;
+    use Tripmate\Backend\Core\Repository;
 
-    class PlaceCategorySeeder {
-        public static function Category() {
-            $db = new DB();
+    class PlaceCategorySeeder extends Repository{
+        public function __construct() {
+            parent::__construct(DB::conn());
+        }
 
-            // db 연결
-            $pdo = $db->getConnection();
-
+        public function Category() {
             // 코드와 이름 매핑
             $categories = [
                     ['code' => 'cafe', 'name' => '카페'],
@@ -51,8 +51,9 @@
 
             // db 값 추가
             foreach ($categories as $cat) {
-                $query = $pdo->prepare("INSERT INTO PlaceCategory (code, name) VALUES (:code, :name)");
-                $query->execute(['code' => $cat['code'], 'name' => $cat['name']]);
+                $sql = "INSERT INTO PlaceCategory (code, name) VALUES (:code, :name)";
+                $param = ['code' => $cat['code'], 'name' => $cat['name']];
+                $this->query($sql, $param);
             }
         }
     }
