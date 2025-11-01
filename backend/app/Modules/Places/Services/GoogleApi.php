@@ -14,13 +14,13 @@
             curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($postData)); // 본문 전달
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true); // SSL 인증서 확인(true 보안적)
             
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); // 결과를 echo하지 말고 변수로 반환
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); // 실행 결과를 echo하지 말고 변수로 반환
             $response = curl_exec($curl); // 실행
 
-            curl_close($curl);
-            
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE); // HTTP 상태 코드
             $error = curl_error($curl); // cURL 에러
+
+            curl_close($curl);
 
             // 응답 처리
             if ($httpCode !== 200 || $response === false) {
