@@ -230,11 +230,29 @@
         public function validatePlace(array $data) {
             // 장소 검증
             $validation = v::key('place', $this->vStringRule(), false)
-                -> key('radius', $this->vStringRule(), false)
-                -> key('lat', $this->vRequiredFloat(), false)
-                -> key('lng', $this->vRequiredFloat(), false)
                 -> key('sort', $this->vStringRule(), false)
-                -> key('page', $this->vIntRule(), false);
+                -> key('pageToken', $this->vStringRule(), false);
+
+            // try-catch 예외 처리 함수 실행
+            $this->runValidate($validation, $data);
+        }
+
+        /**  @param 쿼리*/
+        // 좌표 -> 주소로 변환 유효성 검증
+        public function validateReverseGeocoding(array $data) {
+            // 장소 검증
+            $validation = v::key('lat', $this->vRequiredFloat(), false)
+                ->key('lng', $this->vRequiredFloat(), false);
+
+            // try-catch 예외 처리 함수 실행
+            $this->runValidate($validation, $data);
+        }
+
+        /** @param 쿼리 */
+        // 좌표 마커 -> 장소로 변환 유효성 검증
+        public function validatePlaceGeocoding(array $data) {
+            // 장소 검증
+            $validation = v::key('place_id', $this->vRequiredFloat(), false);
 
             // try-catch 예외 처리 함수 실행
             $this->runValidate($validation, $data);
