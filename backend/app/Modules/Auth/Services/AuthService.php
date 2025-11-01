@@ -51,7 +51,6 @@
                     });
 
                 } catch (DbException $e) {
-                    error_log('여기서 에러가나서요');
                     throw new HttpException(500, 'UNEXPECTED_ERROR', "회원가입 중 알 수 없는 에러가 발생하였습니다.", $e);
                 }
             }
