@@ -5,10 +5,7 @@
 
     class RegionsSeeder {
         public static function Category() {
-            $db = new DB();
-
-            // db 연결
-            $pdo = $db->getConnection();
+            $pdo = DB::conn();
 
             // 지역명 배열
             $regions = [
@@ -33,7 +30,8 @@
 
             // db 값 추가
             foreach ($regions as $cat) {
-                $query = $pdo->prepare("INSERT INTO Region (name, country_code) VALUES (:region, :country)");
+                $sql = "INSERT INTO Region (name, country_code) VALUES (:region, :country)";
+                $query = $pdo->prepare($sql);
                 $query->execute(['region' => $cat, 'country' => 'KR']);
             }
         }
