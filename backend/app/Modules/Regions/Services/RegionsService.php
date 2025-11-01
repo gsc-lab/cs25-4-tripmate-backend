@@ -1,22 +1,41 @@
 <?php
     namespace Tripmate\Backend\Modules\Regions\Services;
 
+use Tripmate\Backend\Common\Exceptions\DbException;
+use Tripmate\Backend\Common\Exceptions\HttpException;
+    use Tripmate\Backend\Core\Service;
     use Tripmate\Backend\Modules\Regions\Repositories\RegionsRepository;
+    use Tripmate\Backend\Core\DB;
 
-    // 서비스 로직
-    class RegionsService {
-        public RegionsRepository $repository;
+    /**
+     *  지역 서비스
+     */
+    class RegionsService extends Service {
+        private RegionsRepository $repository;
 
-        // 생성자에서 DB 호출
         public function __construct() {
-            $this->repository = new RegionsRepository();
+            parent::__construct(DB::conn());
+            $this->repository = new RegionsRepository($this->db);
         }
 
-        // 지역 조회
-        public function regionService($query) {
-            // db 전달
-            $result = $this->repository->regionRepository($query);
-            
-            return $result;
+        /**
+         * 지역 매칭 서비스
+         * @param mixed $region
+         * @return array{item: array[]|string}
+         */
+        public function regionMatch($region) {
+            try {
+                return $this->transaction(function() use ($region) {
+                    $result = $this->repository->selectRegion($region);
+                    if ($result == null) {
+                        throw new HttpException(404, "NOT_FOUND_REGION", "일치하는 지역이 없습니다.");
+                    }
+
+                    return $result;
+
+                }); 
+                } catch (DbException $e) {
+                    throw new HttpException(500, "REGION_FOUND_ERROR","지역 조회에 실패하였습니다.", $e);
+                }
+            }
         }
-    }
