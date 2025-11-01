@@ -2,64 +2,31 @@
     namespace Tripmate\Backend\Modules\Users\Repositories;
 
     use Tripmate\backend\Core\DB;
+    use Tripmate\Backend\Core\Repository;
 
-    class UsersReadRepository {
-        public DB $db;
-        public $pdo;
-
-        // DB 연결
-        public function __construct() {
-            $this->db = new DB();
-
-            // 함수 호출
-            $this->pdo = $this->db->getConnection();
+    class UsersReadRepository extends Repository {
+        public function __construct($db) {
+            parent::__construct($db);
         }
 
         // 내 정보 조회
-        public function userMyPageRepository($userId) {
-            // 트레젝션 실행
-            $this->pdo->beginTransaction();
-            
-            // 회원 조회
-            $query = $this->pdo->prepare("SELECT user_id, email_norm AS email, name, created_at FROM Users WHERE user_id = ?;");
-        
-            // email 값 넣기
-            if(!$query->execute([$userId])) {
-                $this->pdo->rollback();
-                return "DB_EXCEPTION";
-            } 
-
-            // 값 가져오기
-            $data = $query->fetch();
-
+        public function find($userId) {
+            $query = "SELECT user_id, email_norm AS email, name FROM Users WHERE user_id = :user_id;";
+            $parm = ["user_id" => $userId];
+            $data = $this->fetchOne($query, $parm);
             if (!$data) {
-                return "USER_NOT_FOUND"; 
+                return null;
             }
 
-            $this->pdo->commit();
-
-            $email = $data['email'];
-            $nickname = $data['name'];
-            $createdAt = $data['created_at'];
-        
-            return ["email" => $email, "nickname" => $nickname, "created_at" => $createdAt];
+            return ["email" => $data["email"], "nickname" => $data["name"]];
         }
 
         // 회원 탈퇴
-        public function userSecessionRepository($userId) {
-            // 트레젝션 실행
-            $this->pdo->beginTransaction();
+        public function delete($userId) {
+            $query = "DELETE FROM Users WHERE user_id=:user_id;";
+            $param = ["user_id"=> $userId];
+            $result = $this->query($query, $param);
 
-            // 쿼리 문 작성
-            $query = $this->pdo->prepare("DELETE FROM Users WHERE user_id=?;");
-
-            if (!$query->execute([$userId])) {
-                $this->pdo->rollback();
-                return "DB_EXCEPTION";
-            }
-
-            $this->pdo->commit();
-
-            return "SUCCESS";
+            return $result;
+        }
     }
-}
