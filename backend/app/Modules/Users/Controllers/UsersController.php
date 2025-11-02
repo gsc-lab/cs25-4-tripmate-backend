@@ -3,54 +3,46 @@
 
     use Tripmate\Backend\Core\Controller;
     use Tripmate\Backend\Modules\Users\Services\UsersService;
-    use Tripmate\Backend\Common\Middleware\AuthMiddleware as amw;
 
+    /**
+     * 유저 관리(정보 조회, 회원 탈퇴)
+     */
     class UsersController extends Controller{
-        public UsersService $service;
+        private UsersService $service;
 
-        // 생성자
         public function __construct($request, $response) {
-            // 부모 컨트롤러 생성자
             parent::__construct($request, $response);
-            
-            // 서비스 생성자
             $this->service = new UsersService();
-
         }
 
-        // 내 정보 조회
+        /**
+         * 내 정보 조회 컨트롤러
+         * - 토큰 검증 후 사용자 정보 반환
+         * - 성공 시 데이터(200OK, email, nickname) 반환
+         */
         public function userMyPage() {
-            // 토큰 검증
-            $userId = amw::tokenResponse($this->request);
+            return $this->run(function() {
+                $userId = $this->getUserId(); // 토큰 검증
 
-            // 서비스 전달
-            $result = $this->service->userMyPageService($userId);
+                $result = $this->service->myPage($userId);
 
-            if ($result == "DB_EXCEPTION") {
-                $this->error($result, "서버 오류입니다. 잠시 후 다시 시도해주세요.", 500);
-            } else if ($result == "USER_NOT_FOUND") {
-                $this->error($result, "사용자 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.");
-            } else {
-                $this->success($result);
-            }
+                return $result;
+            });
         }
 
-        // 회원 탈퇴
+        /**
+         * 회원 탈퇴 컨트롤러
+         * 토큰 검증 후 회원 삭제
+         * 성공 시 200 NoContent 반환
+         * @return \Tripmate\Backend\Core\Response
+         */
         public function userSecession() {
-            // 토큰 검증
-            $userId = amw::tokenResponse($this->request);
-            
-            //비밀번호 검증여부
+            return $this->run(function() {
+                $userId = $this->getUserId(); // 토큰 검증
 
-            // 서비스 전달
-            $result = $this->service->userSecessionService($userId);
+                $this->service->secession($userId);
 
-            if ($result == "DB_EXCEPTION") {
-                $this->error($result, "서버 오류입니다. 잠시 후 다시 시도해주세요.", 500);
-            } else {
-                $this->success([$result]);
-            }
-            
+                return $this->response->noContent();
+            });
         }
-        
     }
