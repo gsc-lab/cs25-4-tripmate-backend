@@ -91,7 +91,7 @@
          */
         public function searchNearby($lat, $lng) {
             $this->cors();
-            
+
             return $this->run(function() {
                 $query = $this->request->query();
                 $this->validator->validateReverseGeocoding($query);
@@ -123,9 +123,10 @@
         }
 
         // 단건 조회
-        public function singlePlaceSearch(int $placeId) {
-            return $this->run(function() use ($placeId) {
-                
+        public function singlePlaceSearch() {
+            return $this->run(function() {
+                $placeId = $this->request->getAttribute('place_id');
+                $this->validator->validatePlaceId($placeId);
                 $result = $this->service->singlePlace($placeId);
             
                 return $result;
