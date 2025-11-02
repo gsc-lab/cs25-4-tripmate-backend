@@ -1,92 +1,191 @@
 <?php
     namespace Tripmate\Backend\Modules\Places\Services;
 
-    use Tripmate\Backend\Modules\Places\Services\DummyPlaces;
+    use Tripmate\Backend\Common\Exceptions\DbException;
+    use Tripmate\Backend\Core\Service;
     use Tripmate\Backend\Modules\Places\Repositories\PlacesRepository;
+    use Tripmate\Backend\Modules\Places\Services\GoogleApi;
+    use Tripmate\Backend\Core\DB;
+    use Tripmate\Backend\Common\Exceptions\HttpException;
 
-    class PlacesService {
-        public PlacesRepository $repository;
+    /**
+     * 장소 관련 서비스
+     */
+    class PlacesService  extends Service{
+        private $repository;
 
         public function __construct() {
-            $this->repository = new PlacesRepository();
+            parent::__construct(DB::conn());
+            $this->repository = new PlacesRepository(DB::conn());
         }
 
-        // 더미데이터 장소 검색
-        public function searchService($query) {
-            // 데이터 꺼내기
-            $place = $query['place'];
-
-            // 반환된 2차원 더미데이터 배열
-            $result = DummyPlaces::getPlaces($place);
-            
-            // 페이지당 개수
-            $pageMaxItem = 5;
-
-            // 보여줄 페이지 개수
-            $maxPageTotal = 5;
-
-            // 현재 페이지
-            if (isset($query['page'])) {
-                $page = $query['page'];
-            } else {
-                $page = 1;
-            }
-
-            // 시작 아이템 인덱스
-            $startIndex = ($page - 1) * $pageMaxItem; 
-
-            // 데이터 슬라이싱
-            $paginatedData = array_slice($result, $startIndex, $pageMaxItem);
-
-            // 전체 페이지 수 = 아이템 전 개수 / 페이지 당 아이템 수
-            $totalPage = ceil(count($result) / $pageMaxItem);
-            
-            // 시작페이지 및 끝 페이지
-            $startPage = (floor($page - 1) / $maxPageTotal) * $maxPageTotal + 1;
-            $endPage = $startPage + ($maxPageTotal - 1);
-                
-            // 페이지 범위 조정
-            if ($endPage > $totalPage) {
-                $endPage = $totalPage;
-            } else if ($page < 1) {
-                $page = 1;
-            }
-            
-            // 페이지 관련 정보와 데이터 반환
-            return [
-                "meta" => [
-                    'page' => $page,
-                    'page_max_item' => $pageMaxItem,
-                    'total_page' => $totalPage,
-                    'start_page' => $startPage, 
-                    'end_page' => $endPage,
-                    'max_item' => count($result)
-                ],
-                "data" => $paginatedData
-                ];
-        }
+        // 외부 API 엔드포인트
+        private const API_TEXT_SEARCH = "https://places.googleapis.com/v1/places:searchText";
+        private const API_REVERS_GEOCODING = "https://maps.googleapis.com/maps/api/geocode/json";
+        private const API_NEARBY = "https://places.googleapis.com/v1/places:searchNearby";
+        private const API_PLACE_DETAILS = "https://maps.googleapis.com/maps/api/place/details/json";
         
-        // 외부 결과 중 하나를 내부로 저장
-        public function upsertService($data) {
-            // data값 꺼내기
-            $name = $data['name'];
-            $category = $data['category'];
-            $address = $data['address'];
-            $externalRef = $data['external_ref'];
-            $lat = $data['lat'];
-            $lng = $data['lng'];
-            
-            // DB 전달
-            $result = $this->repository->upsertRepository($name, $category, $address, $externalRef, $lat, $lng);
+        // FieldMask 정의
+        private const MASK_SEARCH = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType";
+        private const MASK_NEARBY = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType";
+        private const MASK_PLACE_DETAILS = "place_id,name,formatted_address,geometry/location,types";
+        
+        /**
+         * 외부 API를 불러와 장소 검색
+         * @param mixed $place
+         * @param mixed $token
+         * @return array{data: array, meta: array{next_page_token: mixed}}
+         */
+        public function searchByText($place, $token) {
+            // 본문 작성
+            $postData = [
+                'languageCode' => 'ko',
+                'pageSize' => 5
+            ];
 
-            return $result;
+            // 페이지네이션
+            if (!empty($token)) {
+                $postData['pageToken'] = $token; // pagetoken만 사용(textQuery 사용 불가)
+            } else {
+                $postData['textQuery'] = $place; // 첫 페이지는 place로 요청
+            }
+
+            // 헤더 작성
+            $headers = ['X-Goog-FieldMask:' . self::MASK_SEARCH];
+            
+            // 외부 API 요청
+            $result = GoogleApi::post(self::API_TEXT_SEARCH, $postData, $headers);
+            
+            return $this->placeResponse($result);
+        }
+
+        // 좌표 기준 주소로 변경
+        public function getAddressFromCoordinates($lat, $lng) {
+            $parmas = ['latlng'=> $lat . ',' . $lng ];
+            
+            // API 요청
+            $result = GoogleApi::get(self::API_REVERS_GEOCODING, $parmas);
+
+            // [수정] 비어있거나 'OK'가 아니면 예외 처리
+            if (empty($result['results']) || $result['status'] !== 'OK') {
+                throw new HttpException(404, 'GEOCODING_ZERO_RESULTS', '해당 좌표의 주소를 찾을 수 없습니다.');
+            }
+
+            return $result['results'][0]['formatted_address'];
+            }
+
+        // 좌표를 장소로
+        public function getPlaceDetailsById($placeId) {
+            $params = ['place_id' => $placeId,
+                       'fields' => self::MASK_PLACE_DETAILS];
+        
+            $result = GoogleApi::get(self::API_PLACE_DETAILS, $params);
+
+            $place = $result['result'] ?? null;
+            if (empty($place) || $result['status'] !== 'OK') {
+                throw new HttpException(404, 'PLACE_NOT_FOUND', 'Place ID로 장소를 찾을 수 없거나 API 오류가 발생했습니다.');
+            }
+
+            // 응답 처리
+            $formattedPlace = [
+                'place_id' => $place['place_id'] ?? null,
+                'name' => $place['name'] ?? null,
+                'address'=> $place['formatted_address'] ?? null,
+                'lat' => $place['geometry']['location']['lat'] ?? null,
+                'lng' => $place['geometry']['location']['lng'] ?? null,
+                'category_code' => $place['types'][0] ?? 'etc'
+            ];
+
+            return $formattedPlace;
+        }
+
+
+        // 내 주변 지역 장소 검색
+        public function nearbyPlaces($lat, $lng, $radius) {
+            $headers = ['X-Goog-FieldMask:' . self::MASK_NEARBY];
+
+            // 본문 작성
+            $postData = [
+                'languageCode' => 'ko', 
+                'pageSize' => 20,     
+                'locationRestriction' => [
+                'circle' => [
+                    'center' => [
+                        'latitude' => $lat,
+                        'longitude' => $lng
+                    ],
+                    'radius' => $radius
+                ]
+            ]
+            ];
+
+            // 함수 실행
+            $result = GoogleApi::post(self::API_NEARBY, $postData, $headers);
+            
+            return $this->placeResponse($result);
+        }
+
+        // 반환값 재사용 함수
+        public function placeResponse($result) {
+            // 데이터 처리
+            $formattedPlaces = [];
+
+            if (!empty($result['places'])) {
+                foreach ($result['places'] as $place) {
+                    $formattedPlaces[] = [
+                        'place_id' => $place['id'] ?? null,
+                        'name' => $place['displayName']['text'] ?? '이름 없음',
+                        'address' => $place['formattedAddress'] ?? null,
+                        'lat' => $place['location']['latitude'] ?? null,
+                        'lng' => $place['location']['longitude'] ?? null,
+                        'category' => $place['primaryType'] ?? 'etc'
+                    ];
+                }
+            }
+
+            // 페이지네이션
+            $nextToken = $result['nextPageToken'] ?? null;
+
+            return [
+                'meta' => [
+                    'next_page_token' => $nextToken
+                ],
+                'data' => $formattedPlaces
+            ];
+        }
+
+        // 외부 결과 중 하나를 내부로 저장
+        public function upsert($data) {
+            try {
+                return $this->transaction(function () use ($data) {
+                    // data값 꺼내기
+                    $name = $data['name'];
+                    $category = $data['category'];
+                    $address = $data['address'];
+                    $externalRef = $data['external_ref'];
+                    $lat = $data['lat'];
+                    $lng = $data['lng'];
+                    
+                    // DB 전달
+                    $result = $this->repository->upsertRepository($name, $category, $address, $externalRef, $lat, $lng);
+
+                    return $result;
+                });
+            } catch (DbException $e) {
+                throw new HttpException(500, "NO_DATE","외부 결과를 내부로 불러오는 중 실패했습니다.");
+            }
         }
 
         // 장소 단건 조회
-        public function singlePlaceService($placeId) {
-            // db 전달
-            $result = $this->repository->placeRepository($placeId);
+        public function singlePlace($placeId) {
+            try {
+                // db 전달
+                $result = $this->repository->placeRepository($placeId);
 
-            return $result;
+                return $result;
+
+                } catch (DbException $e) {
+                    throw new HTTPException(500, "PLACE_NOT", "장소를 찾던 도중 실패했습니다.");
+            }
         }
     }
