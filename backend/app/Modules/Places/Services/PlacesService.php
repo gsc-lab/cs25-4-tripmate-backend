@@ -71,7 +71,7 @@
                 throw new HttpException(404, 'GEOCODING_ZERO_RESULTS', '해당 좌표의 주소를 찾을 수 없습니다.');
             }
 
-            return ['data' => $result['results'][0]['formatted_address']];
+            return $result['results'][0]['formatted_address'];
             }
 
         // 좌표를 장소로
@@ -96,7 +96,7 @@
                 'category_code' => $place['types'][0] ?? 'etc'
             ];
 
-            return ['data'=> $formattedPlace];
+            return $formattedPlace;
         }
 
 
@@ -146,16 +146,18 @@
             // 페이지네이션
             $nextToken = $result['nextPageToken'] ?? null;
 
-            return ($formattedPlaces + $nextToken);
+            return [
+                'meta' => [
+                    'next_page_token' => $nextToken
+                ],
+                'data' => $formattedPlaces
+            ];
         }
-        
-
-
 
         // 외부 결과 중 하나를 내부로 저장
         public function upsert($data) {
             try {
-                $this->transaction(function () use ($data) {
+                return $this->transaction(function () use ($data) {
                     // data값 꺼내기
                     $name = $data['name'];
                     $category = $data['category'];
@@ -170,6 +172,7 @@
                     return $result;
                 });
             } catch (DbException $e) {
+                throw new HttpException(500, "NO_DATE","외부 결과를 내부로 불러오는 중 실패했습니다.");
             }
         }
 
@@ -180,8 +183,9 @@
                 $result = $this->repository->placeRepository($placeId);
 
                 return $result;
+
                 } catch (DbException $e) {
-                    throw new HTTPException($e->getMessage());
+                    throw new HTTPException(500, "PLACE_NOT", "장소를 찾던 도중 실패했습니다.");
             }
         }
     }
