@@ -6,6 +6,7 @@
     use Tripmate\Backend\Modules\Places\Repositories\PlacesRepository;
     use Tripmate\Backend\Modules\Places\Services\GoogleApi;
     use Tripmate\Backend\Core\DB;
+    use Tripmate\Backend\Common\Exceptions\HttpException;
 
     /**
      * 장소 관련 서비스
@@ -20,14 +21,14 @@
 
         // 외부 API 엔드포인트
         private const API_TEXT_SEARCH = "https://places.googleapis.com/v1/places:searchText";
-        private const API_REVERS_GEOCODING = "https://maps.googleapis.com/maps/api/geocode/json?latlng=";
+        private const API_REVERS_GEOCODING = "https://maps.googleapis.com/maps/api/geocode/json";
         private const API_NEARBY = "https://places.googleapis.com/v1/places:searchNearby";
-        
+        private const API_PLACE_DETAILS = "https://maps.googleapis.com/maps/api/place/details/json";
         
         // FieldMask 정의
-        private const MASK_SEARCH = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryTypeDisplayName";
-        private const MASK_NEARBY = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryTypeDisplayName";
-        
+        private const MASK_SEARCH = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType";
+        private const MASK_NEARBY = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType";
+        private const MASK_PLACE_DETAILS = "place_id,name,formatted_address,geometry/location,types";
         
         /**
          * 외부 API를 불러와 장소 검색
@@ -60,15 +61,42 @@
 
         // 좌표 기준 주소로 변경
         public function getAddressFromCoordinates($lat, $lng) {
+            $parmas = ['latlng'=> $lat . ',' . $lng ];
+            
             // API 요청
-            $result = GoogleApi::get(self::API_REVERS_GEOCODING, ['latlng'=> $lat . ',' . $lng ]);
+            $result = GoogleApi::get(self::API_REVERS_GEOCODING, $parmas);
+
+            // [수정] 비어있거나 'OK'가 아니면 예외 처리
+            if (empty($result['results']) || $result['status'] !== 'OK') {
+                throw new HttpException(404, 'GEOCODING_ZERO_RESULTS', '해당 좌표의 주소를 찾을 수 없습니다.');
+            }
 
             return ['data' => $result['results'][0]['formatted_address']];
             }
 
         // 좌표를 장소로
-        public function getPlaceFromCoordinates($placeId) {
-            
+        public function getPlaceDetailsById($placeId) {
+            $params = ['place_id' => $placeId,
+                       'fields' => self::MASK_PLACE_DETAILS];
+        
+            $result = GoogleApi::get(self::API_PLACE_DETAILS, $params);
+
+            $place = $result['result'] ?? null;
+            if (empty($place) || $result['status'] !== 'OK') {
+                throw new HttpException(404, 'PLACE_NOT_FOUND', 'Place ID로 장소를 찾을 수 없거나 API 오류가 발생했습니다.');
+            }
+
+            // 응답 처리
+            $formattedPlace = [
+                'place_id' => $place['place_id'] ?? null,
+                'name' => $place['name'] ?? null,
+                'address'=> $place['formatted_address'] ?? null,
+                'lat' => $place['geometry']['location']['lat'] ?? null,
+                'lng' => $place['geometry']['location']['lng'] ?? null,
+                'category_code' => $place['types'][0] ?? 'etc'
+            ];
+
+            return ['data'=> $formattedPlace];
         }
 
 
@@ -110,7 +138,7 @@
                         'address' => $place['formattedAddress'] ?? null,
                         'lat' => $place['location']['latitude'] ?? null,
                         'lng' => $place['location']['longitude'] ?? null,
-                        'category' => $place['primaryTypeDisplayName'] ?? '기타'
+                        'category' => $place['primaryType'] ?? 'etc'
                     ];
                 }
             }
@@ -148,14 +176,12 @@
         // 장소 단건 조회
         public function singlePlace($placeId) {
             try {
-                $this->transaction(function () use ($placeId) {
-                    // db 전달
-                    $result = $this->repository->placeRepository($placeId);
+                // db 전달
+                $result = $this->repository->placeRepository($placeId);
 
-                    return $result;
-                });
-            } catch (DbException $e) {
-            
+                return $result;
+                } catch (DbException $e) {
+                    throw new HTTPException($e->getMessage());
             }
         }
     }
