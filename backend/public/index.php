@@ -107,6 +107,6 @@ try {
 } catch (Throwable $e) {
     // 8-2. 알 수 없는 예외 처리 (간단 로그 + 500)
     error_log("[UNHANDLED] {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
-    $response->error('INTERNAL_SERVER_ERROR', '서버ㄴㄴ 내부 오류가 발생했습니다.', 500);
+    $response->error('INTERNAL_SERVER_ERROR', '서버 내부 오류가 발생했습니다.', 500);
     return;
 }
