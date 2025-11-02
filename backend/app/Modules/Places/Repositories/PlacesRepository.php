@@ -1,7 +1,8 @@
 <?php
     namespace Tripmate\Backend\Modules\Places\Repositories;
 
-    use Tripmate\Backend\Core\DB;
+use Error;
+use Tripmate\Backend\Core\DB;
     use PDO;
     use Tripmate\Backend\Core\Repository;
 
@@ -29,8 +30,9 @@
             $insertSql = "INSERT INTO Place(category_id, name, address, lat, lng, external_ref)
                         VALUE (:cid, :name, :addr, :lat, :lng, :ext)
                         ON DUPLICATE KEY UPDATE
-                        name = :name, category_id = :cid, address = :addr, lat = :lat, lng = :lng;";
-            $insertParam = ['cid' => $categoryId, 'name' => $name, 'addr' => $address, 'lat' => $lat, 'lng' => $lng, 'ext' =>$externalRef];
+                        name = :name_up, category_id = :cid_up, address = :addr_up, lat = :lat_up, lng = :lng_up;";
+            $insertParam = ['cid' => $categoryId, 'name' => $name, 'addr' => $address, 'lat' => $lat, 'lng' => $lng, 'ext' =>$externalRef,
+                            'cid_up' => $categoryId, 'name_up' => $name, 'addr_up' => $address, 'lat_up' => $lat, 'lng_up' => $lng];
             $this->query($insertSql, $insertParam);
 
             // 클라이언트 반환 값
