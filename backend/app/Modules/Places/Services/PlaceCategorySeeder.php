@@ -45,13 +45,15 @@
                     ['code' => 'subway_station', 'name' => '지하철역'],
                     ['code' => 'gas_station', 'name' => '주유소'],
                     ['code' => 'school', 'name' => '학교'],
-                    ['code' => 'library', 'name' => '도서관']
+                    ['code' => 'library', 'name' => '도서관'],
+                    ['code' => 'etc', 'name'=> '기타']
                     
             ];
 
             // db 값 추가
             foreach ($categories as $cat) {
-                $sql = "INSERT INTO PlaceCategory (code, name) VALUES (:code, :name)";
+                $sql = "INSERT INTO PlaceCategory (code, name) VALUES (:code, :name)
+                        ON DUPLICATE KEY UPDAYE name = :name";
                 $param = ['code' => $cat['code'], 'name' => $cat['name']];
                 $this->query($sql, $param);
             }
