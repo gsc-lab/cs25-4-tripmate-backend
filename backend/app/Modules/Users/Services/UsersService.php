@@ -1,30 +1,59 @@
 <?php
     namespace Tripmate\Backend\Modules\Users\Services;
     
-    use Tripmate\Backend\Modules\Users\Repositories\UsersReadRepository as Repository;
+    use Tripmate\Backend\Common\Exceptions\DbException;
+    use Tripmate\Backend\Common\Exceptions\HttpException;
+    use Tripmate\Backend\Core\Service;
+    use Tripmate\Backend\Modules\Users\Repositories\UsersReadRepository;
+    use Tripmate\Backend\Core\DB;
 
-    class UsersService {
-        public Repository $repository;
+    /**
+     * 유저관리 서비스
+     */
+    class UsersService extends Service{
+        private UsersReadRepository $repository;
 
-        // 생성자 
         public function __construct() {
-            // db 객체
-            $this->repository = new Repository();
+            parent::__construct(DB::conn());
+            $this->repository = new UsersReadRepository($this->db);
         }
 
-        // 내 정보 조회
-        public function userMyPageService($userId) {
-            //db 호출
-            $result = $this->repository->userMyPageRepository($userId);
-            
-            return $result;
+        /**
+         * 내 정보 조회 서비스
+         * @param mixed $userId
+         * @return array{created_at: mixed, email: mixed, nickname: mixed|string}
+         */
+        public function myPage($userId) {
+            try {
+                return $this->transaction(function() use($userId) {
+                    $result = $this->repository->find($userId);
+                    if ($result == null) {
+                        throw new HttpException(404,"USER_NOT_FOUNT", "해당 유저를 찾을 수 없어 조회에 실패했습니다.");
+                    }
+
+                    return $result;
+                    });
+
+            } catch (DbException $e) {
+                throw new HttpException(500, "NOT_USERPAGE_DATA", "페이지의 데이터를 불러오는데에 실패했습니다.", $e);
+            }
         }
 
-        // 회원 탈퇴
-        public function userSecessionService($userId) {
-            // DB에 전달
-            $result = $this->repository->userSecessionRepository($userId);
-        
-            return $result;
+        /**
+         * 회원탈퇴 서비스
+         * @param mixed $userId
+         * @return string
+         */
+        public function secession($userId) {
+            try {
+                return $this->transaction(function() use($userId) {
+                    $result = $this->repository->delete($userId);
+                    if ($result === 0) {
+                        throw new HttpException(404, "USER_NOT_FOUND", "삭제할 유저를 찾을 수 없습니다.");
+                    }
+                });
+            } catch (DbException $e) {
+                throw new HttpException(500, "USER_DELETE_FAIL", "회원 삭제에 실패하였습니다.", $e);
+            }
         }
     }
