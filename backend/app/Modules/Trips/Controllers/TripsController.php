@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Tripmate\Backend\Modules\Trips\Controllers;
 
 use Tripmate\Backend\Core\Controller;
+use Tripmate\Backend\Core\DB;
 use Tripmate\Backend\Core\Request;
 use Tripmate\Backend\Core\Response;
 use Tripmate\Backend\Core\Validator;
@@ -17,8 +18,10 @@ final class TripsController extends Controller
     public function __construct(Request $request, Response $response)
     {
         parent::__construct($request, $response);
-        $this->tripsService = new TripsService();
-        $this->validator    = new Validator();
+        
+        $pdo = DB::conn();
+        $this->tripsService = new TripsService($pdo);
+        $this->validator = new Validator();
     }
 
     // 1. Trip 생성 : POST /api/v1/trips
@@ -98,9 +101,13 @@ final class TripsController extends Controller
     }
 
     // 3. Trip 단건 : GET /api/v1/trips/{trip_id}
-    public function showTrip(int $tripId): void
+    public function showTrip(): void
     {
-        $this->run(function () use ($tripId) {
+        $this->run(function () {
+
+            $raw = $this->request->getAttribute('trip_id');
+            $tripId = (is_string($raw) && ctype_digit($raw)) ? (int)$raw : (int)$raw;
+
             // 3-1. 경로 파라미터 검증
             if ($tripId <= 0) {
                 $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
@@ -123,9 +130,13 @@ final class TripsController extends Controller
     }
 
     // 4. Trip 수정 : PUT /api/v1/trips/{trip_id}
-    public function updateTrip(int $tripId): void
+    public function updateTrip(): void
     {
-        $this->run(function () use ($tripId) {
+        $this->run(function ()  {
+
+            $raw = $this->request->getAttribute('trip_id');
+            $tripId = (is_string($raw) && ctype_digit($raw)) ? (int)$raw : (int)$raw;
+
             // 4-1. 경로 파라미터 검증
             if ($tripId <= 0) {
                 $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
@@ -168,9 +179,12 @@ final class TripsController extends Controller
     }
 
     // 5. Trip 삭제 : DELETE /api/v1/trips/{trip_id}
-    public function deleteTrip(int $tripId): void
+    public function deleteTrip(): void
     {
-        $this->run(function () use ($tripId) {
+        $this->run(function ()  {
+            $raw = $this->request->getAttribute('trip_id');
+            $tripId = (is_string($raw) && ctype_digit($raw)) ? (int)$raw : (int)$raw;
+            
             // 5-1. 경로 파라미터 검증
             if ($tripId <= 0) {
                 $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
