@@ -35,7 +35,7 @@
             // 서버 전달
             $curl = curl_init($endpoint); // API 주소 연결
 
-            if ($method = "POST") {
+            if ($method == "POST") {
                 curl_setopt($curl, CURLOPT_POST, true); // 주소 옵션 : POST, 기본값 : GET
                 curl_setopt($curl, CURLOPT_HTTPHEADER, $headers); // 헤더 전달
                 curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($postData)); // 본문 전달   
@@ -53,7 +53,7 @@
 
             // 에러 처리
             if ($httpCode >= 400 || $response === false) {
-                throw new HttpException("500", "GOOGLE_API_FAILED", "외부 API 호출에 실패했습니다.", $error);
+                throw new HttpException("500", "GOOGLE_API_FAILED", "외부 API 호출에 실패했습니다.");
             }
 
             // 데이터 본문 처리
