@@ -34,6 +34,7 @@
          * API를 호출하여 장소 검색 후 장소 반환
          */
         public function search() {
+            $this->cors();
 
             return $this->run(function() {
                 $query = $this->request->query();
@@ -43,12 +44,8 @@
                 $token = $query['pageToken'] ?? null;
 
                 $result = $this->service->searchByText($place, $token);
-
-                // 응답 형식 변형
-                $data = $result['data'];
-                $meta = $result['meta'];
         
-                return $this->response->success($data, $meta);
+                return $result;
             });
         }
 
@@ -56,6 +53,7 @@
          * Geocoding (좌표->주소) 변환 컨트롤러
          */
         public function reverseGeocoding() {
+            $this->cors();
 
             return $this->run(function() {
                 $query = $this->request->query();
@@ -73,7 +71,9 @@
         /**
          * 장소의 Id 받아 장소 반환 컨트롤러
          */
-        public function placeGeocoding($lat, $lng) {
+        public function placeGeocoding() {
+            $this->cors();
+
             return $this->run(function() {
                 $query = $this->request->query();
                 $this->validator->validatePlaceGeocoding($query);
@@ -90,6 +90,8 @@
          * 주변 지역 검색
          */
         public function searchNearby($lat, $lng) {
+            $this->cors();
+            
             return $this->run(function() {
                 $query = $this->request->query();
                 $this->validator->validateReverseGeocoding($query);
@@ -100,11 +102,7 @@
 
                 $result = $this->service->nearbyPlaces($lat, $lng, $radius);
                 
-                // 응답 형식 변형
-                $data = $result['data'];
-                $meta = $result['meta'];
-        
-                return $this->response->success($data, $meta);
+                return $result;
             });
         }
 
