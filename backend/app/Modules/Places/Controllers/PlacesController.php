@@ -43,8 +43,12 @@
                 $token = $query['pageToken'] ?? null;
 
                 $result = $this->service->searchByText($place, $token);
+
+                // 응답 형식 변형
+                $data = $result['data'];
+                $meta = $result['meta'];
         
-                return $result;
+                return $this->response->success($data, $meta);
             });
         }
 
@@ -76,7 +80,7 @@
 
                 $placeId = $query['place_id'];
 
-                $result = $this->service->getPlaceFromCoordinates($placeId);
+                $result = $this->service->getPlaceDetailsById($placeId);
                 
                 return $result;
             });
@@ -96,7 +100,11 @@
 
                 $result = $this->service->nearbyPlaces($lat, $lng, $radius);
                 
-                return $result;
+                // 응답 형식 변형
+                $data = $result['data'];
+                $meta = $result['meta'];
+        
+                return $this->response->success($data, $meta);
             });
         }
 
@@ -110,7 +118,7 @@
                 $data = $this->request->body();
                 $this->validator->validatePlaceCategory($data);
                     
-                $place = $this->service->upsertService($data);
+                $place = $this->service->upsert($data);
 
                 return $place;
             });
@@ -120,7 +128,7 @@
         public function singlePlaceSearch(int $placeId) {
             return $this->run(function() use ($placeId) {
                 
-                $result = $this->service->singlePlaceService($placeId);
+                $result = $this->service->singlePlace($placeId);
             
                 return $result;
             });
