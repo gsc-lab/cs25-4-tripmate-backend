@@ -3,48 +3,33 @@
 
     use Tripmate\Backend\Core\DB;
     use PDO;
+    use Tripmate\Backend\Core\Repository;
 
-    class PlacesRepository {
-        public DB $db;
-        public $pdo;
+    class PlacesRepository extends Repository {
 
-        public function __construct() {
-            // DB 객체 생성
-            $this->db = new DB();
-
-            // 함수 호출
-            $this->pdo = $this->db->getConnection();
+        public function __construct($db) {
+            parent::__construct($db);
         }
 
         // upsert db 로직
         public function upsertRepository($name, $category, $address, $externalRef, $lat, $lng) {
-            // 트레젝션
-            $this->pdo->beginTransaction();
-
             // category_name → category_id 매핑
-            $categoryResult = $this->pdo->prepare("SELECT category_id FROM PlaceCategory WHERE name = ?");
-
-            // error
-            if (!$categoryResult->execute([$category])) {
-                $this->pdo->rollback();
-                return "CATEGORY_FAIL";
-            }
-
-            // category_id 값 확인
-            $data = $categoryResult->fetch();
+            $sql = "SELECT category_id FROM PlaceCategory WHERE code = :code";
+            $param = ['code' => $category];
+            $data = $this->fetchOne($sql, $param);
 
             if (!$data) {
-                $this->pdo->rollback();
-                return "CATEGORY_FAIL";
+                $sql = "SELECT category_id FROM PlaceCategory WHERE code = :etc";
+                $etcRow = $this->fetchOne($sql, [':etc' => "etc"]);
             }
 
-            $categoryId = $data['category_id'];
+            $categoryId = $data['category_id'] ?? $etcRow['category_id'];
 
             // Place 테이블에 저장 (external_ref 기준 없을 시)
-            $placeResult = $this->pdo->prepare("INSERT INTO Place(category_id, name, address, lat, lng, external_ref)
-                                SELECT :cid, :name, :addr, :lat, :lng, :ext
-                                FROM DUAL
-                                WHERE NOT EXISTS (SELECT 1 FROM Place WHERE external_ref = :ext)");
+            $insertSql = "INSERT INTO Place(category_id, name, address, lat, lng, external_ref)
+                        SELECT :cid, :name, :addr, :lat, :lng, :ext
+                        FROM DUAL
+                        WHERE NOT EXISTS (SELECT 1 FROM Place WHERE external_ref = :ext)";
 
             // error
             if (!$placeResult->execute(['cid' => $categoryId, 'name' => $name, 'addr' => $address, 'lat' => $lat, 'lng' => $lng, 'ext' =>$externalRef])) {
