@@ -11,41 +11,41 @@ return function(\AltoRouter $router, Request $request, Response $response){
   $router->map(
     'POST',
     '/api/v1/trips/[i:trip_id]/days',
-    [new TripDaysController($request, $response), 'createTripDay']
+    [TripDaysController::class, 'createTripDay']
   );
 
   // 2-2 trip day 목록 조회 : GET /api/v1/trips/{trip_id}/days
   $router->map(
     'GET',
     '/api/v1/trips/[i:trip_id]/days',
-    [new TripDaysController($request, $response), 'getTripDays']
+    [TripDaysController::class, 'getTripDays']
   );
 
   // 2-3. trip day 단건 조회 : GET /api/v1/trips/{trip_id}/days/{day_no}
   $router->map(
     'GET',
     '/api/v1/trips/[i:trip_id]/days/[i:day_no]',
-    [new TripDaysController($request, $response), 'showTripDay']
+    [TripDaysController::class, 'showTripDay']
   );
 
   // 2-4. trip day 수정 : PUT /api/v1/trips/{trip_id}/days/{day_no}
   $router->map(
     'PUT',
     '/api/v1/trips/[i:trip_id]/days/[i:day_no]',
-    [new TripDaysController($request, $response), 'updateTripDay']
+    [TripDaysController::class, 'updateTripDay']
   );
 
   // 2-5. trip day 삭제 : DELETE /api/v1/trips/{trip_id}/days/{day_no}
   $router->map(
     'DELETE',
     '/api/v1/trips/[i:trip_id]/days/[i:day_no]',
-    [new TripDaysController($request, $response), 'deleteTripDay']
+    [TripDaysController::class, 'deleteTripDay']
   );
 
   // 2-6. trip day 순서 재배치 : POST /api/v1/trips/{trip_id}/days:reorder
   $router->map(
     'POST',
     '/api/v1/trips/[i:trip_id]/days:reorder',
-    [new TripDaysController($request, $response), 'reorderTripDays']
+    [TripDaysController::class, 'reorderTripDays']
   );
 };
