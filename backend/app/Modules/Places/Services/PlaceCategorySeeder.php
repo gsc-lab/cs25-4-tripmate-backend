@@ -53,8 +53,8 @@
             // db 값 추가
             foreach ($categories as $cat) {
                 $sql = "INSERT INTO PlaceCategory (code, name) VALUES (:code, :name)
-                        ON DUPLICATE KEY UPDAYE name = :name";
-                $param = ['code' => $cat['code'], 'name' => $cat['name']];
+                        ON DUPLICATE KEY UPDATE name = :name_update";
+                $param = ['code' => $cat['code'], 'name' => $cat['name'], 'name_update' => $cat['name']];
                 $this->query($sql, $param);
             }
         }
