@@ -235,7 +235,7 @@ class TripDaysRepository extends Repository{
 
     } catch(\Throwable $e) {
         error_log('[TripDaysRepository::createTripDay][PDO] ' . $e->getMessage());
-        throw new DbException('TRIPDAY_CREATE_FAILED', '트립 일차 생성 중 데이터베이스 오류가 발생했습니다.',  $e); 
+        throw new DbException('TRIPDAY_CREATE_FAILED', 'trip day 생성 중 데이터베이스 오류가 발생했습니다.',  $e); 
     }
   }
 
@@ -302,12 +302,12 @@ class TripDaysRepository extends Repository{
       // 11-1. SQL 작성
       $sql ="
           DELETE FROM TripDay 
-          WHERE trip_day_id = :id
+          WHERE trip_day_id = :trip_day_id
       ";
 
       // 11-2. 쿼리 실행 및 성공 여부 반환
       return $this->execute($sql, [
-        'trip_id' => $tripDayId
+        'trip_day_id' => $tripDayId
       ]) > 0;
 
     }catch(\Throwable $e) {
