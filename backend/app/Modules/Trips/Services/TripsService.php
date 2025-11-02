@@ -18,10 +18,11 @@ class TripsService extends Service
   // 프러퍼티 정의
   public TripsRepository $tripsRepository;
 
-  // 같은 PDO로 Repo를 생성해 하나의 트랜잭션 컨텍스트를 공유
-  public function __construct(?TripsRepository $tripsRepository = null) 
+  // 같은 PDO로 레포를 생성해 동일 트랜잭션 공유
+  public function __construct(PDO $db, ?TripsRepository $tripsRepository = null) 
   {
-    $this->tripsRepository = $tripsRepository ?? new TripsRepository();
+    parent::__construct($db);
+    $this->tripsRepository = $tripsRepository ?? new TripsRepository($db);
   }
 
   // 1. Trip 생성
@@ -37,7 +38,7 @@ class TripsService extends Service
       // - 날짜 형식 controller에서 수행
       $dayCount = Date::calcInclusiveDays($startDate, $endDate);
       if ($dayCount <= 0) {
-        throw new HttpException(500, 'INVALID_DATE_RANGE', '유효하지 않은 날짜 범위입니다.'); 
+        throw new HttpException(400, 'INVALID_DATE_RANGE', '유효하지 않은 날짜 범위입니다.'); 
       }
 
       try {
@@ -53,9 +54,10 @@ class TripsService extends Service
             $endDate
           );
 
+
           // 1-4. dayCount 수만큼 TripDay 생성 (insertTripDay 호출)
           for ($dayNo = 1; $dayNo <= $dayCount; $dayNo++) {
-            if (!$this->tripsRepository->insertTripDay($tripId, $dayNo)){
+              if (!$this->tripsRepository->insertTripDay($tripId, $dayNo)){
               throw new DbException('TRIP_DAY_INSERT_FAILED', '여행 일자 생성에 실패했습니다.');
             }
           }

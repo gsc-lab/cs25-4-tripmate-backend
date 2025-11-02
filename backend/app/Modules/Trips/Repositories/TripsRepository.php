@@ -14,9 +14,9 @@ use PDO;
 class TripsRepository extends Repository {
 
     // 생성자에서 DB 접속 및 pdo 초기화
-    public function __construct(?PDO $pdo = null) {
-        // 주입 된 pdo가 없으면 DB::conn() 사용
-        parent::__construct($pdo ?? DB::conn());
+    public function __construct(PDO $pdo) {
+        // 반드시 같은 PDO 인스턴스를 사용
+        parent::__construct($pdo);
     }
     
     // 1. Trip 생성
@@ -48,13 +48,14 @@ class TripsRepository extends Repository {
             // 1-3. 삽입된 trip_id 조회
             // - 성공시 trip_id 반환
             // - 실패시 DbException 발생
-            $id = $this->lastInsertId();
+            $id = (int)$this->lastInsertId();
             if ($id === false) {
                 throw new DbException('TRIP_INSERT_NO_ID', '여행 생성 후 ID 조회에 실패했습니다.');
             }
             return $id;
 
         } catch(\Throwable $e) {
+             error_log('[TripsRepository::insertTrip][PDO] ' . $e->getMessage());
             throw new DbException('TRIP_INSERT_FAILED', '여행 생성 중 데이터베이스 오류가 발생했습니다.',  $e);
         }
     }
