@@ -16,7 +16,7 @@
 
         // 알고리즘 함수
         public static function jwtAlgorithm() {
-            return $_ENV['JWT_ALGORITHM'] ?? getenv('JWT_ALGORITHM') ?? 'HS256';
+            return $_ENV['JWT_ALGORITHM'] ?? 'HS256';
         }
 
         // JWT 발급
@@ -25,7 +25,7 @@
             $secretKey = self::secretKey();
 
             // 환경 설정
-            $expireTime = (int)($_ENV['JWT_EXPIRE_SECONDS'] ?? getenv('JWT_EXPIRE_SECONDS') ?? 43200);
+            $expireTime = (int)($_ENV['JWT_EXPIRE_SECONDS'] ?? 43200);
             $jwtAlgorithm = self::jwtAlgorithm();
 
             // 페이로드 정의
