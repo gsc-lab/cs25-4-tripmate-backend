@@ -93,50 +93,43 @@ class TripDaysController extends Controller {
       return null;
     });
   }
-    // // 5. trip day 목록 조회 : GET /api/v1/trips/{trip_id}/days
-    // // 5-1. getTripDays 메서드 정의
-    // // 일차 목록 조회
-    // public function getTripDays(int $tripId) {
-    //     // 토큰 검증
-    //     $userId = AuthMiddleware::tokenResponse($this->request);
+    // 5. trip day 목록 조회 : GET /api/v1/trips/{trip_id}/days
+    // 5-1. getTripDays 메서드 정의
+    // 일차 목록 조회
+    public function getTripDays() {
+        $this->run(function () {
+          $userId = $this->getUserId();
+          $tripId = $this->request->getAttribute('trip_id');
 
-    //     // 서비스 전달
-    //     $result = $this->tripDaysService->daysListService($tripId, $userId);
+          $result = $this->tripDaysService->selectTripDaysList($tripId, $userId);
+
+          return $result;
+        });
+    }
+
+    // 6. trip day 수정 : PUT /api/v1/trips/{trip_id}/days/{day_no}
+    // 6-1. updateTripDay 메서드 정의
+    // 일차 메모 속성 수정
+    public function updateTripDay() {
+      $this->run(function () {
+        $userId = $this->getUserId(); // 토큰의 user_id
+
+        $tripId = $this->request->getAttribute('trip_id');
+        $dayNo = $this->request->getAttribute('day_no');
+
+        $data = $this->request->body();
+        $this->validator->validateMemo($data);
+        $this->validator->validateTripId($tripId);
+        $this->validator->validateDayNo($dayNo);
+
+        $memo = $data['memo'];
+
+        // 노트 수정 로직 호출
+        $result = $this->tripDaysService->UpdateTripDayNoteEdit($tripId, $dayNo, $memo, $userId);
     
-    //     if ($result == "DB_SELECT_FAILD") {
-    //         $this->error($result, "DB 조회에 실패하였습니다.");
-    //     } else {
-    //         $this->success([$result]);
-    //     }
-    // }
-
-    // // 6. trip day 수정 : PUT /api/v1/trips/{trip_id}/days/{day_no}
-    // // 6-1. updateTripDay 메서드 정의
-    // // 일차 메모 속성 수정
-    // public function updateTripDay(int $tripId, int $dayId) {
-    //     // 토큰 검증
-    //     $userId = AuthMiddleware::tokenResponse($this->request);
-    
-    //     // 데이터 가져오기
-    //     $data = $this->request->body;
-
-    //     // 유효성 검증
-    //     if ($this->validator->validateMemo($data) !== true) {
-    //         $this->error("VALIDATION_ERROR", "입력값이 유효하지 않습니다.");
-    //     }
-
-    //     $memo = $data['memo'];
-
-    //     $result = $this->tripDaysService->noteService($tripId, $dayId, $memo, $userId);
-    
-    //     if($result == "UPDATE_FAIL") {
-    //         $this->error($result, "메모 업데이트에 실패했습니다.");
-    //     } else if ($result == "NOT_FOUND") {
-    //         $this->error($result, "입력값 조회에 실패하였습니다.");
-    //     } else {
-    //         $this->success($result);
-    //     }
-    // }
+        return $result;
+      });
+    }
 
   // 7. trip day 삭제 : DELETE /api/v1/trips/{trip_id}/days/{day_no}
   // 7-1. deleteTripDay 메서드 정의
@@ -167,34 +160,23 @@ class TripDaysController extends Controller {
 
   }
 
-//     // 8. trip day 순서 변경 : POST /api/v1/trips/{trip_id}/days:reorder
-//     // 8-1. reorderTripDays 메서드 정의
-//     // 일차 재배치
-//     public function reorderTripDays(int $tripId) {
-//         // 토큰 검증
-//         $userId = AuthMiddleware::tokenResponse($this->request);
+  // 8. trip day 순서 변경 : POST /api/v1/trips/{trip_id}/days:reorder
+  // 8-1. reorderTripDays 메서드 정의
+  // 일차 재배치
+  public function reorderTripDays() {
+    $this->run(function () {
+      $userId = $this->getUserId();
 
-//         // 본문 데이터 꺼내기
-//         $data = $this->request->body;
+      $data = $this->request->body();
+      $tripId = $this->request->getAttribute('trip_id');
 
-//         // 유효성 검증
-//         if (!$this->validator->validateDayRelocation($data)) {
-//             $this->error("VALIDATION_ERROR", "입력값이 유효하지 않습니다.");
-//         }
-//         $orders = $data['orders'];
+      $this->validator->validateDayRelocation($data);
+      $this->validator->validateTripId($tripId);
+      $orders = $data['orders'];
 
-//         // 서비스 전달
-//         $result = $this->tripDaysService->relocationDaysService($tripId, $orders, $userId);
-    
-//         if($result == "SELECT_FAIL") {
-//             $this->error($result, "값 조회에 실패했습니다.");
-//         } else if($result == "UPDATE_FAIL") {
-//             $this->error($result, "일차 재배치에 실패했습니다.");
-//         } else if ($result == "NOT_FOUND") {
-//             $this->error($result, "값 조회에 실패했습니다.");
-//         } else {
-//             $this->success($result);
-//         }
-//     }
-// }
+      $result = $this->tripDaysService->updateRelocationTripDays($tripId, $orders, $userId);
+  
+      return $result;
+    });
+  }
 }

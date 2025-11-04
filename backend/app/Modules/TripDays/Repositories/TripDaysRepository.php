@@ -7,6 +7,7 @@ use Tripmate\Backend\Core\DB;
 use Tripmate\Backend\Core\Repository;
 use Tripmate\Backend\Common\Exceptions\DbException;
 use PDO;
+use Throwable;
 
 // TripDaysRepository 클래스 정의
 class TripDaysRepository extends Repository{
@@ -364,179 +365,121 @@ class TripDaysRepository extends Repository{
         throw new DbException('TRIPDAY_DELETE_FAILED', 'trip 일차 삭제 중 데이터베이스 오류가 발생했습니다.',  $e);
     }
   }
+
+  // 일차 목록 조회
+  public function selectTripDays($tripId, $userId) {
+    try {
+      $sql = "SELECT * 
+              FROM TripDay 
+              WHERE trip_id=:trip_id
+              ORDER BY day_no;";
+
+      $param = ["trip_id" => $tripId];
+
+      // 값 반환
+      $data = $this->fetchAll($sql, $param);
+      return $data;
+
+    } catch (\Throwable $e) {
+      throw new DbException("TRIPDAY_LIST_FAIL", "일차 목록 중 오류가 발생하였습니다.", $e);
+    }
+  }
+
+  // 일차 메모 수정
+  public function updateTripdayNoteEdit($tripId, $dayNo, $memo) {
+    try {
+      $sql = "UPDATE TripDay
+              SET memo = :memo
+              WHERE trip_id = :trip_id AND day_no = :day_no;";
+      $param = ["memo" => $memo, "trip_id" => $tripId, "day_no" => $dayNo];
+      $updateSql = $this->execute($sql, $param);
+
+      // 수정된 행이 없을 경우
+      if ($updateSql === 0) {
+        return null;
+      }
+
+    // 조회
+    $selectSql = "SELECT *
+                  FROM TripDay 
+                  WHERE trip_id = :trip_id AND day_no = :day_no;";
+    $selectParam = ["trip_id" => $tripId, "day_no" => $dayNo];
+    $data = $this->fetchOne($selectSql, $selectParam);
+
+    return $data;
+
+    } catch (Throwable $e) {
+      throw new DbException("TRIPDAY_NOTE_ERROR", "메모 수정에 실패했습니다.", $e);
+    }
+  }
+
+    // 일차 재배치
+    public function updateRelocationDays($tripId, $orders) {
+      try {
+        // 큰 수를 임시로 day_no에 업데이트
+        $updateSql = "UPDATE TripDay
+                        SET day_no = day_no + 1000
+                        WHERE trip_id = :trip_id 
+                        AND day_no = :day_no;";
+        
+        // 반복하여 쿼리 업데이트
+        foreach ($orders as $order) {
+          $updateParam = ['trip_id' => $tripId, 'day_no' => $order['day_no']];
+          $this->query($updateSql, $updateParam);
+        }
+        
+        // 일차 재정렬 쿼리 작성
+        $upSql = "UPDATE TripDay
+                  SET day_no = :new_day_no
+                  WHERE trip_id = :trip_id AND day_no = :day_no;";
+
+        foreach ($orders as $order) {
+          $dayNo = $order["day_no"];
+          $newDayNo = $order['new_day_no'];
+          $tempDayNo = $dayNo + 1000;
+
+          // 실행
+          $upParam = ['new_day_no' => $newDayNo, 'trip_id' => $tripId, 'day_no' => $tempDayNo];
+          $this->query($upSql, $upParam);
+
+          // 스케쥴 아이템 조정을 위한 day_id 획득
+          $selectSql = "SELECT trip_day_id FROM TripDay 
+                        WHERE trip_id = :trip_id AND day_no = :day_no;";
+          $selectParam = ["trip_id" => $tripId, "day_no" => $newDayNo];
+
+          // 실행
+          $tripDayId = $this->fetchOne($selectSql, $selectParam);
+          if (!$tripDayId) {
+            throw new DbException('NOT_REORDER', '재정렬 중 trip_dayid를 찾는 것에 실패하였습니다.');
+          }
+          $tripDayId = $tripDayId['trip_day_id'];
+
+          // 일정 아이템의 날짜 수정
+          $offset = $newDayNo - $dayNo;
+
+          if ($offset != 0) {
+            // trip_day_id를 기준으로 스케쥴 아이템 날짜 이동 수 만큼 조정
+            $scheduleItemSql = "UPDATE ScheduleItem si
+                              JOIN TripDay td ON si.trip_day_id = td.trip_day_id
+                              SET si.visit_time = DATE_ADD(si.visit_time, INTERVAL :offset DAY)
+                              WHERE td.trip_day_id = :trip_day_id";
+            $scheduleItemParam = ["offset" => $offset, "trip_day_id" => $tripDayId];
+            $this->query($scheduleItemSql, $scheduleItemParam);
+          }
+        }   
+
+        // 반환
+        $tripDaysSql = "SELECT trip_day_id, trip_id, day_no, memo
+                        FROM TripDay
+                        WHERE trip_id = :trip_id
+                        ORDER BY day_no ASC";
+        $tripDaysParam = ['trip_id' => $tripId];
+        $result = $this->fetchAll($tripDaysSql, $tripDaysParam);
+
+        return $result;
+
+    } catch (Throwable $e) {
+        throw new DbException('NOT_TRIPDAT_REORDER', "날짜 재정렬에 실패하였습니다.", $e);
+    }
+  }
 }
-
-    // // 일차 목록 조회
-    // public function listRepository($tripId, $userId) {
-    //     // 트레젝션 실행
-    //     $this->pdo->beginTransaction();
-
-    //     // 유저 아이디 검증
-    //     $userResult = $this->isTripOwner($tripId, $userId);
-
-    //     if ($userResult !== true) {
-    //         return "NOT_USER_TRIP";
-    //     }
-
-    //     // 쿼리 작성
-    //     $tripResult = $this->pdo->prepare("SELECT *
-    //                     FROM TripDay 
-    //                     WHERE trip_id=?
-    //                     ORDER BY day_no;");
-
-    //     if (!$tripResult->execute([$tripId])) {
-    //         $this->pdo->rollback();
-    //         return "DB_SELECT_FAILD";
-    //     }
-
-    //     // 값 반환
-    //     $data = $tripResult->fetchAll($this->pdo::FETCH_ASSOC);
-    //     if ($data <= 0) {
-    //         $this->pdo->rollback();
-    //         return "DB_SELECT_FAILD";
-    //     }
-
-    //     $this->pdo->commit();
-
-    //     return $data;
-    // }
-
-    // // 일차 메모 수정
-    // public function noteRepository($tripId, $dayId, $memo, $userId) {
-    //     // 유저 아이디 검증
-    //     $userResult = $this->isTripOwner($tripId, $userId);
-
-    //     if ($userResult !== true) {
-    //         return "NOT_USER_TRIP";
-    //     }
-
-    //     // 쿼리 작성
-    //     $tripResult = $this->pdo->prepare("UPDATE TripDay
-    //                                 SET memo = :memo
-    //                                 WHERE trip_id = :trip_id AND day_no = :day_no;");
-    
-    //     $tripRes = $tripResult->execute(["memo" => $memo, "trip_id" => $tripId, "day_no" => $dayId]);
-        
-    //     if (!$tripRes) {
-    //         return "UPDATE_FAIL";
-    //     }
-
-    //     // 조회
-    //     $tripQuery = $this->pdo->prepare("SELECT *
-    //                     FROM TripDay 
-    //                     WHERE trip_id = :trip_id AND day_no = :day_no;");
-
-    //     if (!$tripQuery->execute(["trip_id" => $tripId, "day_no" => $dayId])) {
-    //         return "NOT_FOUND";                 
-    //     }
-
-    //     $data = $tripQuery->fetch($this->pdo::FETCH_ASSOC);
-    //     if (!$data) {
-    //         return "NOT_FOUND";
-    //     }
-
-    //     return $data;
-    // }
-
-    // // 일차 재배치
-    // public function relocationDaysRepository($tripId, $orders, $userId) {
-    //     // 유저 아이디 검증
-    //     $userResult = $this->isTripOwner($tripId, $userId);
-
-    //     if ($userResult !== true) {
-    //         return "NOT_USER_TRIP";
-    //     }
-
-    //     // 트레젝션 실행
-    //     $this->pdo->beginTransaction();
-
-    //     // 일차 재정렬(임시 변경)
-
-    //     foreach ($orders as $order) {
-    //         $dayNo = $order['day_no'];
-    //         // 큰 수를 임시로 day_no에 업데이트
-    //         $tripResult = $this->pdo->prepare("UPDATE TripDay
-    //                                       SET day_no = day_no + 1000
-    //                                       WHERE trip_id = :trip_id AND day_no = :day_no;");
-
-    //         // 쿼리 실패시
-    //         if(!$tripResult->execute(['trip_id' => $tripId, 'day_no' => $dayNo])) {
-    //             $this->pdo->rollback();
-    //             return "UPDATE_FAIL";
-    //         }
-    //     }
-        
-    //     // 일차 재정렬 쿼리 작성
-    //     foreach ($orders as $order) {
-    //         $dayNo = $order['day_no'];
-    //         $newDayNo = $order['new_day_no'];
-
-    //         // day_no 업데이트 쿼리 작성
-    //         $tripResult = $this->pdo->prepare("UPDATE TripDay
-    //                                 SET day_no = :new_day_no
-    //                                 WHERE trip_id = :trip_id AND day_no = :day_no;");
-            
-    //         // 쿼리 실패시
-    //         if(!$tripResult->execute(['new_day_no' => $newDayNo, 'trip_id' => $tripId, 'day_no' => ($dayNo + 1000)])) {
-    //           $this->pdo->rollback();
-    //           return "UPDATE_FAIL";
-    //         } 
-
-    //         // trip_id 조회
-    //         $daysSelect = $this->pdo->prepare("SELECT trip_day_id FROM TripDay 
-    //                                     WHERE trip_id = :trip_id AND day_no = :day_no;");
-
-    //         // 조회 쿼리 실패 시 
-    //         if(!$daysSelect->execute(["trip_id" => $tripId, "day_no" => $newDayNo])) {
-    //             $this->pdo->rollback();
-    //             return "SELECT_FAIL";
-    //         }
-
-    //         $tripDayId = $daysSelect->fetch($this->pdo::FETCH_ASSOC);
-    //         $tripDayId = $tripDayId['trip_day_id'];
-            
-    //         // 조회 실패 시 
-    //         if (!$tripDayId) {
-    //             $this->pdo->rollback();
-    //             return "SELECT_FAIL";
-    //         }
-    //         // 일정 아이템의 날짜 수정
-    //         $offset = $newDayNo - $dayNo;
-
-    //         // trip_day_id를 기준으로 스케쥴 아이템 날짜 이동 수 만큼 조정
-    //         $scheduleItemResult = $this->pdo->prepare("UPDATE ScheduleItem si
-    //                         JOIN TripDay td ON si.trip_day_id = td.trip_day_id
-    //                         SET si.visit_time = DATE_ADD(si.visit_time, INTERVAL :offset DAY)
-    //                         WHERE td.trip_day_id = :trip_day_id");
-
-    //         // 조정 쿼리 실패
-    //         if(!$scheduleItemResult->execute(["offset" => $offset, "trip_day_id" => $tripDayId])) {
-    //             $this->pdo->rollback();
-    //             return "UPDATE_FAIL";
-    //         }
-    //     }   
-
-    //     // 반환
-    //     $tripDaysQuery = $this->pdo->prepare("SELECT trip_day_id, trip_id, day_no, memo
-    //                                     FROM TripDay
-    //                                     WHERE trip_id = :trip_id
-    //                                     ORDER BY day_no ASC");
-
-    //     if (!$tripDaysQuery->execute(['trip_id' => $tripId])) {
-    //         $this->pdo->rollback();
-    //         return "SELECT_FAIL";
-    //     }
-
-    //     $tripDaysData = $tripDaysQuery->fetchAll($this->pdo::FETCH_ASSOC);
-
-    //     // 값 실패 시 
-    //     if (!$tripDaysData) {
-    //         $this->pdo->rollback();
-    //         return "NOT_FOUND";
-    //     }
-
-    //     $this->pdo->commit();
-
-    //     return $tripDaysData;
-    // }
-
