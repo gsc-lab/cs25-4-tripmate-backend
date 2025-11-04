@@ -12,31 +12,31 @@ return function(\AltoRouter $router, Request $request, Response $response) {
   $router->map(
     'POST',
     '/api/v1/trips',
-    [new TripsController($request, $response), 'createTrip']
+    [TripsController::class, 'createTrip']
   );
   // 2-2. 여행 목록 조회 : GET/api/v1/trips
   $router->map(
     'GET',
     '/api/v1/trips',
-    [new TripsController($request, $response), 'getTrips']
+    [TripsController::class, 'getTrips']
   );
 
   // 2-3. 여행 딘건 조회 : GET /api/v1/trips/{trip_id}
   $router->map(
     'GET',
     '/api/v1/trips/[i:trip_id]',
-    [new TripsController($request, $response), 'showTrip']
+    [TripsController::class, 'showTrip']
   );
   // 2-4. 여행 수정 : PUT /api/v1/trips/{trip_id}
   $router->map(
     'PUT',
     '/api/v1/trips/[i:trip_id]',
-    [new TripsController($request, $response), 'updateTrip']
+    [TripsController::class, 'updateTrip']
   );
   // 2-5. 여행 삭제 : DELETE /api/v1/trips/{trip_id}
   $router->map(
     'DELETE',
     '/api/v1/trips/[i:trip_id]',
-    [new TripsController($request, $response), 'deleteTrip']
+    [TripsController::class, 'deleteTrip']
   );
 };

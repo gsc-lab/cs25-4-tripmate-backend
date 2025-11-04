@@ -4,124 +4,135 @@ namespace Tripmate\Backend\Modules\TripDays\Services;
 
 // 2. TripsRepository 클래스 로드 및 Date 유틸리티 로드
 use Tripmate\Backend\Common\Utils\Date;
+use Tripmate\Backend\Core\Service;
 use Tripmate\Backend\Modules\TripDays\Repositories\TripDaysRepository;
+use PDO;
+use Tripmate\Backend\Common\Exceptions\HttpException;
+use Tripmate\Backend\Common\Exceptions\DbException;
+use Tripmate\Backend\Core\DB;
 
-// 임시 클래스 작성
-class TripDaysService {
+// TripDaysService 클래스 정의
+// - TripDays 관련 비즈니스 로직 처리
+// - 공통 Service 상속 받아 사용
+class TripDaysService extends Service {
   
-  // 3. TripDaysRepository 프러퍼티 정의
+  // 프러퍼티 정의
   public TripDaysRepository $tripDaysRepository;
 
-  // 4. 생성자에서 TripDaysRepository 초기화
-  function __construct() {
-    $this-> tripDaysRepository  = new TripDaysRepository(); 
+  // 같은 PDO로 레포를 생성해 동일 트랜잭션 공유
+  public function __construct(PDO $db, ?TripDaysRepository $tripDaysRepository = null) 
+  {
+    parent::__construct($db);
+    $this->tripDaysRepository = $tripDaysRepository ?? new TripDaysRepository($db);
   }
 
-  // 5. 여행 추가 메서드 
-  public function addTripDay(int $userId, int $tripId, int $dayNo, ?string $memo = null): int|false {
-    // 5-0. tripId가 userId 소유인지 확인
-    if (!$this -> tripDaysRepository -> isTripOwner($tripId, $userId)) {
-      return false;
-    }
-
-    // 5-1. 트레젝션 시작
-    if (!$this -> tripDaysRepository -> beginTransaction()) {
-      return false;
-    }
-    // 5-2. 여행 일자 추가
-    $tripDayId = $this -> tripDaysRepository -> createTripDay($tripId, $dayNo, $memo,);
+  // 5. TripDay 생성
+  // - 실패시 HttpException 발생
+  public function addTripDay(
+    int $userId, 
+    int $tripId, 
+    int $dayNo, 
+    ?string $memo = null): int {
     
-    // 5-3. 여행 일자 추가 실패 시 롤백 후 false 반환
-    if ($tripDayId === false) {
-      $this -> tripDaysRepository -> rollBack();
-      return false;
-    }
+      try {
+        // 1-1. tripId가 userId 소유인지 확인
+        if (!$this->tripDaysRepository->isTripOwner($tripId, $userId)) {
+          throw new HttpException(403, 'FORBIDDEN', '해당 여행에 대한 권한이 없습니다.');
+        }
 
-    // 5-4. 커밋이 실패하면 롤백 후 false 반환
-    if (!$this -> tripDaysRepository -> commit()) {
-      $this -> tripDaysRepository -> rollBack();
-      return false;
-    }
-    // 5-5. 성공 시 여행 일자 ID 반환
-    return $tripDayId;
-    
+        // 1-2. 트랜잭션 시작
+        return $this->transaction(function(PDO $pdo) use($tripId, $dayNo, $memo) {
+          // 1-3. 삽입
+          $newId = $this->tripDaysRepository->createTripDay($tripId, $dayNo, $memo);
+          // 1-4. dayCount 동기화
+          $this->tripDaysRepository->updateTripDayCount($tripId);
+          // 1-5. 새로 생성된 tripDay ID 반환
+          return $newId;
+        });
+      } catch (DbException $e) {
+        throw new HttpException(500, 'TRIPDAY_CREATION_FAILED', '여행 일자 생성에 실패했습니다.');
+      }
   }
 
   // 6. 여행 단건 조회 메서드
-  public function getTripDay(int $userId, int $tripId, int $dayNo): array|false {
-    
-    // 6-0. tripId가 userId 소유인지 확인
-    if (!$this -> tripDaysRepository -> isTripOwner($tripId, $userId)) {
-      return false;
+  public function getTripDay(
+    int $userId, 
+    int $tripId, 
+    int $dayNo
+    ): array {
+    try {
+      // 6-1. tripId가 userId 소유인지 확인
+      if (!$this -> tripDaysRepository -> isTripOwner($tripId, $userId)) {
+        error_log(message: "Unauthorized access attempt by user ID: $userId for trip ID: $tripId");
+        throw new HttpException(403, 'FORBIDDEN', '해당 여행에 대한 권한이 없습니다.');
+      }
+
+      // 6-2. 여행 일자 조회
+      $tripDay = $this -> tripDaysRepository -> findByTripAndDayNo($tripId, $dayNo);
+
+      // 6-3. 결과 반환
+      if ($tripDay === null) {
+        throw new HttpException(404, 'TRIPDAY_NOT_FOUND', '해당하는 여행 일자를 찾을 수 없습니다.');
+      }
+      return $tripDay;
+
+    } catch (DbException $e) {
+      throw new HttpException(500, 'TRIPDAY_RETRIEVAL_FAILED', '여행 일자 조회에 실패했습니다.');
     }
-
-    // 6-1. 여행 단건 조회
-    $tripDay = $this -> tripDaysRepository -> findByTripAndDayNo($tripId, $dayNo);
-
-    // 6-2. 조회 실패 시 false 반환
-    if ($tripDay === false) {
-      return false;
-    }
-
-    // 6-3. 성공 시 여행 정보 배열 반환
-    return $tripDay;
   }
 
   // 7. 여행 일자 삭제 메서드
-  public function deleteTripDay(int $userId, int $tripId, int $dayNo): bool {
-    // 7-0. tripId가 userId 소유인지 확인
-    if (!$this -> tripDaysRepository -> isTripOwner($tripId, $userId)) {
+  public function deleteTripDay(
+    int $userId, 
+    int $tripId, 
+    int $dayNo
+    ): bool {
+      try {
+        // 7-1. tripId가 userId 소유인지 확인
+        if (!$this->tripDaysRepository->isTripOwner($tripId, $userId)) {
+          throw new HttpException(403, 'FORBIDDEN', '해당 여행에 대한 권한이 없습니다.');
+        }
+
+        // 7-2. 트랜잭션 시작
+        return $this->transaction(function(PDO $pdo) use($tripId, $dayNo) {
+          // 7-3. 여행 일자 삭제 + 재졍룔
+          $deleted = $this->tripDaysRepository->deleteTripDayById($tripId, $dayNo);
+          if (!$deleted) {
+            throw new HttpException(404, 'TRIPDAY_NOT_FOUND', '해당하는 여행 일자를 찾을 수 없습니다.');
+          }
+          // 7-4. dayCount 동기화
+          $this->tripDaysRepository->updateTripDayCount($tripId);
+          return true;
+        });
+      } catch (DbException $e) {
+        throw new HttpException(500, 'TRIPDAY_DELETION_FAILED', '여행 일자 삭제에 실패했습니다.');
+      }
     
-      return false;
-    }
-
-    // 7-1. 트레젝션 시작
-    if (!$this -> tripDaysRepository -> beginTransaction()) {
-      return false;
-    }
-
-    // 7-2. 여행 일자 삭제
-    $deleted = $this -> tripDaysRepository ->  deleteTripDayById($tripId, $dayNo);
-
-    // 7-3. 삭제 실패 시 롤백 후 false 반환
-    if ($deleted === false) {
-      $this -> tripDaysRepository -> rollBack();
-      return false;
-    }
-
-    // 7-4. 커밋이 실패하면 롤백 후 false 반환
-    if (!$this -> tripDaysRepository -> commit()) {
-      $this -> tripDaysRepository -> rollBack();
-      return false;
-    }
-
-    // 7-5. 성공 시 true 반환
-    return true;
   }
 
-    // 8. 일차 목록 조회
-    public function daysListService($tripId, $userId) {
-        // db 전달
-        $result = $this->tripDaysRepository->listRepository($tripId, $userId);
+    // // 8. 일차 목록 조회
+    // public function daysListService($tripId, $userId) {
+    //     // db 전달
+    //     $result = $this->tripDaysRepository->listRepository($tripId, $userId);
 
-        return $result;
-    }
+    //     return $result;
+    // }
 
-    // 9. 노트 수정
-    public function noteService($tripId, $dayId, $memo, $userId) {
-        // db 전달
-        $result = $this->tripDaysRepository->noteRepository($tripId, $dayId, $memo, $userId);
+    // // 9. 노트 수정
+    // public function noteService($tripId, $dayId, $memo, $userId) {
+    //     // db 전달
+    //     $result = $this->tripDaysRepository->noteRepository($tripId, $dayId, $memo, $userId);
     
-        // 반환
-        return $result;
-    }
+    //     // 반환
+    //     return $result;
+    // }
 
-    // 10. 일자 재배치
-    public function relocationDaysService($tripId, $orders, $userId) {
-        // db 전달
-        $result = $this->tripDaysRepository->relocationDaysRepository($tripId, $orders, $userId);
+    // // 10. 일자 재배치
+    // public function relocationDaysService($tripId, $orders, $userId) {
+    //     // db 전달
+    //     $result = $this->tripDaysRepository->relocationDaysRepository($tripId, $orders, $userId);
     
-        // 반환
-        return $result;
-    }
+    //     // 반환
+    //     return $result;
+    // }
 }
