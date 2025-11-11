@@ -214,7 +214,7 @@ class ScheduleItemsController extends Controller
                 $this->response->error('INVALID_ITEM_ID', 'item_id가 필요합니다.', 400);
                 return null;
             }
-            // newSeqNo는 1 이상 권장 (Validator에 규칙이 있으면 그걸로 대체)
+            // newSeqNo는 1 이상
             if ($newSeqNo < 1) {
                 $this->response->error('INVALID_SEQ_NO', 'new_seq_no는 1 이상의 정수여야 합니다.', 400);
                 return null;

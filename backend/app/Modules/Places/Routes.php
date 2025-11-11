@@ -5,12 +5,21 @@
 
     // User 라우트 등록
     return function (\AltoRouter $router, Request $request, Response $response): void {
-        //  라우팅 등록
-        $router->map('GET', '/api/v1/places/external-search', [new PlacesController($request, $response), 'search']);
+        //  장소 검색 라우터
+        $router->map('GET', '/api/v1/places/external-search', [PlacesController::class, 'search']);
 
-        //  라우팅 등록
-        $router->map('GET', '/api/v1/places/[i:place_id]', [new PlacesController($request, $response), 'singlePlaceSearch']);
+        // 좌표 -> 주소 라우터
+        $router->map('GET', '/api/v1/places/reverse-geocode', [PlacesController::class, 'reverseGeocoding']);
 
-        //  라우팅 등록
-        $router->map('POST', '/api/v1/places/from-external', [new PlacesController($request, $response), 'placeUpsert']);
+        // 좌표 -> 장소 라우터
+        $router->map('GET', '/api/v1/places/place-geocode', [PlacesController::class, 'placeGeocoding']);
+
+        // 지역 주변 장소 검색 라우터
+        $router->map('GET', '/api/v1/places/nearby', [PlacesController::class, 'searchNearby']);
+
+        // 단건조회 라우터
+        $router->map('GET', '/api/v1/places/[i:place_id]', [PlacesController::class, 'singlePlaceSearch']);
+
+        // 외부결과 저장 라우터
+        $router->map('POST', '/api/v1/places/from-external', [PlacesController::class, 'placeUpsert']);
     };

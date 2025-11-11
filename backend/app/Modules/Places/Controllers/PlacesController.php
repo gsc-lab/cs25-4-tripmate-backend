@@ -13,65 +13,123 @@
         public function __construct($request, $response) {
             parent::__construct($request, $response);
 
-            // 유효성 검증
             $this->validator = new Validator();
-
             $this->service = new PlacesService();
         }
+
+        // 임시 CORS
+        public function cors() {
+            header("Access-Control-Allow-Origin: *"); // 모든 출처(도메인, 포트) 허용
+            header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // 요청 방식 허용
+            header("Access-Control-Allow-Headers: Content-Type, Authorization"); 
+
+            if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { // 사전 요청 처리
+                http_response_code(200);
+                exit();
+            }
+        }
         
-        // 더미데이터 기반 장소 검색
+        /**
+         * 장소 검색 컨트롤러
+         * API를 호출하여 장소 검색 후 장소 반환
+         */
         public function search() {
-            // query, page
-            $query = $this->request->query;
+            $this->cors();
 
-            // 데이터 검증
-            $result = $this->validator->validatePlace($query);
+            return $this->run(function() {
+                $query = $this->request->query();
+                $this->validator->validatePlace($query);
 
-            if ($result !== true) {
-                $this->error("AUTH_FAILED", "입력값이 유효하지 않습니다. 다시 한 번 확인해주세요.");
-                exit;
-            } 
-            
-            // 서비스 호출
-            $place = $this->service->searchService($query);
-            
-            $this->success($place);
+                $place = $query['place'] ?? null;
+                $token = $query['pageToken'] ?? null;
+
+                $result = $this->service->searchByText($place, $token);
+        
+                return $result;
+            });
         }
 
-        // 사용자가 선택한 외부 결과 중 하나 내부 저장
+        /**
+         * Geocoding (좌표->주소) 변환 컨트롤러
+         */
+        public function reverseGeocoding() {
+            $this->cors();
+
+            return $this->run(function() {
+                $query = $this->request->query();
+                $this->validator->validatereverseGeocoding($query);
+
+                $lat = $query['lat'];
+                $lng = $query['lng'];
+
+                $result = $this->service->getAddressFromCoordinates($lat, $lng);
+                
+                return $result;
+            });
+        }
+
+        /**
+         * 장소의 Id 받아 장소 반환 컨트롤러
+         */
+        public function placeGeocoding() {
+            $this->cors();
+
+            return $this->run(function() {
+                $query = $this->request->query();
+                $this->validator->validatePlaceGeocoding($query);
+
+                $placeId = $query['place_id'];
+
+                $result = $this->service->getPlaceDetailsById($placeId);
+                
+                return $result;
+            });
+        }
+
+        /**
+         * 주변 지역 검색
+         */
+        public function searchNearby($lat, $lng) {
+            $this->cors();
+
+            return $this->run(function() {
+                $query = $this->request->query();
+                $this->validator->validateReverseGeocoding($query);
+
+                $lat = $query['lat'];
+                $lng = $query['lng'];
+                $radius = 1000; // 고정값
+
+                $result = $this->service->nearbyPlaces($lat, $lng, $radius);
+                
+                return $result;
+            });
+        }
+
+        /**
+         * 사용자가 선택한 외부 결과 중 하나 내부 저장
+         */
         public function placeUpsert() {
-            // 토큰 검증
-            $userId = amw::tokenResponse($this->request);
+            return $this->run(function() {
+                $this->requireAuth();
 
-            // 유효성 검증
-            $data = $this->request->body;
-            if ($this->validator->validatePlaceCategory($data) !== true) {
-                $this->error("AUTH_FAILED", "입력값이 유효하지 않습니다. 다시 한 번 확인해주세요.");
-                exit;
-            }
+                $data = $this->request->body();
+                $this->validator->validatePlaceCategory($data);
+                    
+                $place = $this->service->upsert($data);
 
-            // 서비스 전달
-            $place = $this->service->upsertService($data);
-
-            if ($place == "CATEGORY_FAIL") {
-                $this->error($place, "카테고리 정보 처리에 실패했습니다.");
-            } else if($place == "PLACE_FAIL") {
-                $this->error($place, "장소 정보 처리에 실패했습니다.");
-            } else {
-                $this->success($place);
-            }
+                return $place;
+            });
         }
 
         // 단건 조회
-        public function singlePlaceSearch(int $placeId) {
+        public function singlePlaceSearch() {
+            return $this->run(function() {
+                $placeId = $this->request->getAttribute('place_id');
+                $this->validator->validatePlaceId($placeId);
+                $result = $this->service->singlePlace($placeId);
             
-            // 서비스 전달
-            $result = $this->service->singlePlaceService($placeId);
-        
-            if($result == "PLACE_FAIL") {
-                $this->error($result, "장소 정보 처리에 실패했습니다.");
-            } else {
-                $this->success($result);
-            }
+                return $result;
+            });
         }
     } 
