@@ -59,7 +59,7 @@
 
         // 회원탈퇴 유효성 검증
         public function validatePassword(array $data) {
-            // email, password 검증
+            // password 검증
             $validation = v::key('password', v::stringType()->length(8, 128)
                         -> regex('/[A-Z]/')->regex('/[a-z]/')->regex('/[0-9]/')->regex('/[!@#*]/'), true);
 
