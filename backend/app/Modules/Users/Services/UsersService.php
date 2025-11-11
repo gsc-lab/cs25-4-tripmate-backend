@@ -6,16 +6,20 @@
     use Tripmate\Backend\Core\Service;
     use Tripmate\Backend\Modules\Users\Repositories\UsersReadRepository;
     use Tripmate\Backend\Core\DB;
+    use Tripmate\Backend\Modules\Auth\Repositories\UserReadRepository;
+use Tripmate\Backend\Modules\Auth\Repositories\UserRepository;
 
     /**
      * 유저관리 서비스
      */
     class UsersService extends Service{
         private UsersReadRepository $repository;
+        private UserRepository $userRepository;
 
         public function __construct() {
             parent::__construct(DB::conn());
             $this->repository = new UsersReadRepository($this->db);
+            $this->userRepository = new UserRepository($this->db);
         }
 
         /**
@@ -44,9 +48,18 @@
          * @param mixed $userId
          * @return string
          */
-        public function secession($userId) {
+        public function secession($password, $email) {
             try {
-                return $this->transaction(function() use($userId) {
+                return $this->transaction(function() use($password, $email) {
+                    try {
+                        // 패스워드 및 이메일 검증
+                        $userId = $this->userRepository->getVerifiedUserId($email, $password);
+                    } catch (DbException $e) {
+                        // 인증 실패는 401(Unauthorized)로 변환
+                        throw new HttpException(401, "AUTH_FAILED", "이메일 또는 비밀번호가 일치하지 않습니다.");
+                    }
+
+                    // 검증 성공 시 회원 삭제
                     $result = $this->repository->delete($userId);
                     if ($result === 0) {
                         throw new HttpException(404, "USER_NOT_FOUND", "삭제할 유저를 찾을 수 없습니다.");
