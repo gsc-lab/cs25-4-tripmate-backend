@@ -30,25 +30,37 @@
             $this->query($insertSql, $insertParm);
         }
 
-        // 로그인 로직
-        public function findUser($email, $password) {
+        // 이메일과 비밀번호를 검증하고 user_id를 반환.
+        public function getVerifiedUserId($email, $password) {
             $selectSql = "SELECT user_id, password_hash FROM Users WHERE email_norm = :email;";
             $selectParm = ["email"=> $email]; 
             $data = $this->fetchOne($selectSql, $selectParm);
 
             // 이메일 조회 반환 값이 없을 경우
             if(!$data) {
-                throw new DbException("NOT_EMAIL_FOUND","등록되지 않은 이메일입니다.");
+                throw new DbException("NOT_EMAIL_FOUND");
             }
             $userId = $data['user_id'];
             $pwdHash = $data['password_hash'];
-            error_log($userId);
 
-            // 비밀번호 검증
-            if((Password::verify($password, $pwdHash)) === false) {
-                throw new DbException("PASSWORD_NOT",'패스워드 불일치로 로그인에 실패하였습니다.');
+            if(!$data || Password::verify($password, $pwdHash) === false) {
+                throw new DbException("LOGIN_FAILED");
             }
 
             return $userId;
+        }
+
+        public function findUser(string $email, string $password) {
+            try {
+                // 1. 공통 인증 함수 호출
+                $userId = $this->getVerifiedUserId($email, $password);
+
+                return $userId;
+            } catch(DbException $e) {
+                if($e->getMessage() === 'NOT_EMAIL_FOUND' || $e->getMessage() === 'PASSWORD_NOT') {
+                    throw new DbException("LOGIN_FAILED", "이메일 또는 비밀번호가 올바르지 않습니다.", $e);
+                }
+            }
+
         }
     }
