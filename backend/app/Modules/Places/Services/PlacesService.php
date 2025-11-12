@@ -66,7 +66,7 @@
             // API 요청
             $result = GoogleApi::get(self::API_REVERS_GEOCODING, $parmas);
 
-            // [수정] 비어있거나 'OK'가 아니면 예외 처리
+            // 비어있거나 'OK'가 아니면 예외 처리
             if (empty($result['results']) || $result['status'] !== 'OK') {
                 throw new HttpException(404, 'GEOCODING_ZERO_RESULTS', '해당 좌표의 주소를 찾을 수 없습니다.');
             }
