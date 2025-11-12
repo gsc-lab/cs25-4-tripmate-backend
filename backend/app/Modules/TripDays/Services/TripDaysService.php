@@ -160,7 +160,13 @@ class TripDaysService extends Service {
 
         });
       } catch (DbException $e) {
-        throw new HttpException(500, 'TRIP_REORDER_FAIL', '일차 재배치에 실패하였습니다.');
+        switch ($e->getCodeName()) {
+          case 'NOT_REORDER':
+            throw new HttpException(403, 'NOT_REORDER', '재정렬 중 trip_dayid를 찾는 것에 실패하였습니다.');
+          default:
+            throw new HttpException(500, 'TRIP_REORDER_FAIL', '일차 재배치에 실패하였습니다.');
+      }
     }
   }
 }
+
