@@ -57,6 +57,16 @@
             $this->runValidate($validation, $data);
         } 
 
+        // 회원탈퇴 유효성 검증
+        public function validatePassword(array $data) {
+            // password 검증
+            $validation = v::key('password', v::stringType()->length(8, 128)
+                        -> regex('/[A-Z]/')->regex('/[a-z]/')->regex('/[0-9]/')->regex('/[!@#*]/'), true);
+
+            // try-catch 예외 처리 함수 실행
+            $this->runValidate($validation, $data);
+        }
+
         // 회원가입 유효성 검증
         public function validateUserRegister(array $data) {
             // nickname 유효성 검증
