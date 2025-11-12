@@ -110,29 +110,57 @@ class TripDaysService extends Service {
     
   }
 
-    // // 8. 일차 목록 조회
-    // public function daysListService($tripId, $userId) {
-    //     // db 전달
-    //     $result = $this->tripDaysRepository->listRepository($tripId, $userId);
+    // 8. 일차 목록 조회
+    public function selectTripDaysList($tripId, $userId) {
+      // tripId가 userId 소유인지 확인
+      if (!$this->tripDaysRepository->isTripOwner($tripId, $userId)) {
+        throw new HttpException(403, 'FORBIDDEN', '해당 여행에 대한 권한이 없습니다.');
+      }
+      try {
+        $result = $this->tripDaysRepository->selectTripDays($tripId, $userId);
+        
+        return $result;
 
-    //     return $result;
-    // }
+      } catch (DbException $e) {
+          throw new HttpException(500, 'TRIPDAY_LIST_FAIL', '일차 목록 조회에 실패하였습니다.');
+      }
+    }
 
-    // // 9. 노트 수정
-    // public function noteService($tripId, $dayId, $memo, $userId) {
-    //     // db 전달
-    //     $result = $this->tripDaysRepository->noteRepository($tripId, $dayId, $memo, $userId);
-    
-    //     // 반환
-    //     return $result;
-    // }
+    // 9. 노트 수정
+    public function UpdateTripDayNoteEdit($tripId, $dayNo, $memo, $userId) {
+      // tripId가 userId 소유인지 확인
+      if (!$this->tripDaysRepository->isTripOwner($tripId, $userId)) {
+        throw new HttpException(403, 'FORBIDDEN', '해당 여행에 대한 권한이 없습니다.');
+      }
+      
+      try {
+        $result = $this->tripDaysRepository->updateTripdayNoteEdit($tripId, $dayNo, $memo);
+        if ($result == null) {
+          throw new HttpException(404, 'MEMO_EDIT_ERROR','메모 수정에 실패하였습니다.');
+        }
+        return $result;
+      
+      } catch (DbException $e) {
+        throw new HttpException(500, 'TRIP_NOTE_EDIT_FAIL', '일차 메모 수정에 실패하였습니다.');
+      }
+    }
 
-    // // 10. 일자 재배치
-    // public function relocationDaysService($tripId, $orders, $userId) {
-    //     // db 전달
-    //     $result = $this->tripDaysRepository->relocationDaysRepository($tripId, $orders, $userId);
-    
-    //     // 반환
-    //     return $result;
-    // }
+    // 10. 일자 재배치
+    public function updateRelocationTripDays($tripId, $orders, $userId) {
+      // tripId가 userId 소유인지 확인
+      if (!$this->tripDaysRepository->isTripOwner($tripId, $userId)) {
+        throw new HttpException(403, 'FORBIDDEN', '해당 여행에 대한 권한이 없습니다.');
+      } 
+      
+      try {
+        return $this->transaction(function () use ($tripId, $orders) {
+          $result = $this->tripDaysRepository->updateRelocationDays($tripId, $orders);
+      
+          return $result;
+
+        });
+      } catch (DbException $e) {
+        throw new HttpException(500, 'TRIP_REORDER_FAIL', '일차 재배치에 실패하였습니다.');
+    }
+  }
 }
