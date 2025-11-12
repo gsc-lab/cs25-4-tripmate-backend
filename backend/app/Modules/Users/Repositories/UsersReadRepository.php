@@ -3,6 +3,7 @@
 
     use Tripmate\backend\Core\DB;
     use Tripmate\Backend\Core\Repository;
+    use Tripmate\Backend\Common\Utils\Password;
 
     class UsersReadRepository extends Repository {
         public function __construct($db) {
@@ -22,10 +23,18 @@
         }
 
         // 회원 탈퇴
-        public function delete($userId) {
-            $query = "DELETE FROM Users WHERE user_id=:user_id;";
-            $param = ["user_id"=> $userId];
-            $result = $this->query($query, $param);
+        public function delete($userId, $password) {
+            // 비밀번호 검증
+            $sql = "SELECT user_id, password_hash FROM Users WHERE user_id = :user_id;";
+            $param = ["user_id" => $userId]; 
+            $data = $this->fetchOne($sql, $param);
+
+            if ($data && Password::verify($password, $data['password_hash'])) {
+                $deleteSql = "DELETE FROM Users WHERE user_id = :user_id;";
+                $result = $this->query($deleteSql, $param);   
+            } else {
+                $result = 0;
+            }
 
             return $result;
         }

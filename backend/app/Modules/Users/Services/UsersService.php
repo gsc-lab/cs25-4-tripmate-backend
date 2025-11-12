@@ -44,10 +44,10 @@
          * @param mixed $userId
          * @return string
          */
-        public function secession($userId) {
+        public function secession($userId, $password) {
             try {
-                return $this->transaction(function() use($userId) {
-                    $result = $this->repository->delete($userId);
+                return $this->transaction(function() use($userId, $password) {
+                    $result = $this->repository->delete($userId, $password);
                     if ($result === 0) {
                         throw new HttpException(404, "USER_NOT_FOUND", "삭제할 유저를 찾을 수 없습니다.");
                     }

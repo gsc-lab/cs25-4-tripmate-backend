@@ -3,16 +3,19 @@
 
     use Tripmate\Backend\Core\Controller;
     use Tripmate\Backend\Modules\Users\Services\UsersService;
+    use Tripmate\Backend\Core\Validator;
 
     /**
      * 유저 관리(정보 조회, 회원 탈퇴)
      */
     class UsersController extends Controller{
         private UsersService $service;
+        private Validator $validator;
 
         public function __construct($request, $response) {
             parent::__construct($request, $response);
             $this->service = new UsersService();
+            $this->validator = new Validator();
         }
 
         /**
@@ -40,7 +43,11 @@
             return $this->run(function() {
                 $userId = $this->getUserId(); // 토큰 검증
 
-                $this->service->secession($userId);
+                $data = $this->request->body();
+                $this->validator->validatePassword($data);
+                $password = $data["password"];
+
+                $this->service->secession($userId, $password);
 
                 return $this->response->noContent();
             });
