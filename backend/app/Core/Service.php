@@ -5,6 +5,7 @@ namespace Tripmate\Backend\Core;
 // use 작성
 use PDO;
 use Tripmate\Backend\Common\Exceptions\DbException;
+use Tripmate\Backend\Common\Exceptions\HttpException;
 
 // 모든 서비스의 공통 베이스 추상화 class
 // - 트랜잭션 처리
@@ -52,6 +53,11 @@ abstract class Service
 
             // 1-7. 이미 DbException이면 그대로 던짐
             if ($e instanceof DbException) {
+                throw $e;
+            }
+
+            // HTTP 예외라면 (서비스 계층에서 발생한 비즈니스 에러)
+            if ($e instanceof HttpException) {
                 throw $e;
             }
 
