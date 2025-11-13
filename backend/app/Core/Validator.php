@@ -229,7 +229,8 @@
         /**  @param 쿼리*/
         public function validateRegionSearch($data) {
             // 지역 이름 검증
-            $validation = v::key('query', $this->vStringRule(), true);
+            $validation = v::key('query', $this->vStringRule(), false)
+                        -> key("country", $this->vStringRule(), false);
 
             // try-catch 예외 처리 함수 실행
             $this->runValidate($validation, $data);
