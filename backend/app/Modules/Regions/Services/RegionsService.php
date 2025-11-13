@@ -23,7 +23,7 @@ use Tripmate\Backend\Common\Exceptions\HttpException;
          * @param mixed $region
          * @return array{item: array[]|string}
          */
-        public function regionMatch($region) {
+        public function searchRegions($region) {
             try {
                 return $this->transaction(function() use ($region) {
                     $result = $this->repository->selectRegion($region);
@@ -38,4 +38,15 @@ use Tripmate\Backend\Common\Exceptions\HttpException;
                     throw new HttpException(500, "REGION_FOUND_ERROR","지역 조회에 실패하였습니다.", $e);
                 }
             }
+
+        /**
+         * 지역 목록 조회
+         */
+        public function listRegions($country){
+            try {
+                return $this->repository->getSelectRegion($country);
+            } catch (DbException $e) {
+                throw new HttpException(500, "REGION_NOT_FOUND","지역 목록 ", $e);
+            }
         }
+    }
