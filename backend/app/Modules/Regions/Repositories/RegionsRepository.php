@@ -27,4 +27,16 @@
 
             return $data;
         }
+
+        /**
+         * 지역 조회 리포지토리
+         */
+        public function getSelectRegion($country) {
+            $sql = "SELECT *
+                    FROM Region WHERE country_code = :country;";
+            $param = ["country"=> $country];
+            $data = $this->fetchAll($sql, $param);
+
+            return $data;
     }
+}
