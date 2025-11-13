@@ -38,7 +38,7 @@
 
             // 이메일 조회 반환 값이 없을 경우
             if(!$data) {
-                throw new DbException("NOT_EMAIL_FOUND","등록되지 않은 이메일입니다.");
+                throw new DbException("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다.");
             }
             $userId = $data['user_id'];
             $pwdHash = $data['password_hash'];
@@ -46,7 +46,7 @@
 
             // 비밀번호 검증
             if((Password::verify($password, $pwdHash)) === false) {
-                throw new DbException("PASSWORD_NOT",'패스워드 불일치로 로그인에 실패하였습니다.');
+                throw new DbException("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다.");
             }
 
             return $userId;

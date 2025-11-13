@@ -73,7 +73,12 @@
                     return amw::tokenRequest($userId);
                 });
             } catch (DbException $e) {
-                throw new HttpException(500, 'LOGIN_ERROR', '로그인 도중 알 수 없는 에러가 발생하였습니다.', $e);
+                switch ($e->getCodeName()) {
+                    case "INVALID_CREDENTIALS":
+                        throw new HttpException(400, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다.");
+                    default:
+                        throw new HttpException(500, 'LOGIN_ERROR', '로그인 도중 알 수 없는 에러가 발생하였습니다.');
+                }
             }
         }
     }
