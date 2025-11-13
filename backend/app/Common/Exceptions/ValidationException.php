@@ -55,7 +55,8 @@
             'trip_id'      => "TRIP_ID_INVALID",
             'query'        => "QUERY_INVALID",
             'page'         => "PAGE_INVALID",
-            'sort'         => "SORT_INVALID"
+            'sort'         => "SORT_INVALID",
+            "country"      => "COUNTRY_INVALID"
         ];
 
         $mapped = [];
