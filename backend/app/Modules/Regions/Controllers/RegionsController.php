@@ -22,15 +22,20 @@
          * 지역 검색 컨트롤러
          * 
          */
-        public function regionSearch() {
+        public function getRegion() {
             return $this->run(function() {
                 $region = $this->request->query(); // 지역 이름 데이터
                 $this->validator->validateRegionSearch($region);
-                $region = $region['query'];
 
-                $result = $this->service->regionMatch($region);
-            
-                return $result;
+                $query = $region['query'] ?? null;
+                $country = $region['country'] ?? 'KR';
+
+                // 쿼리가 있을 경우
+                if (!empty($query)) {
+                    return $this->service->searchRegions($query);
+                }
+
+                return $this->service->listRegions($country);
             });
         }
     }
