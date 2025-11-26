@@ -48,18 +48,18 @@
                 $prediction = $item['placePrediction'];
                 $structure = $prediction['structuredFormat'] ?? [];
 
-            $formattedSuggestions[] = [
-                // 1. 장소 ID
-                'place_id' => $prediction['placeId'],
-                // 2. 장소/가게 이름
-                'name'     => $structure['mainText']['text'] 
-                              ?? $prediction['text']['text'],
-                // 3. 주소
-                'address'  => $structure['secondaryText']['text'] ?? '' 
-            ];
-        }
+                $formattedSuggestions[] = [
+                    // 1. 장소 ID
+                    'place_id' => $prediction['placeId'],
+                    // 2. 장소/가게 이름
+                    'name'     => $structure['mainText']['text'] 
+                                ?? $prediction['text']['text'],
+                    // 3. 주소
+                    'address'  => $structure['secondaryText']['text'] ?? '' 
+                ];
+            }
 
-        return $formattedSuggestions;
+            return $formattedSuggestions;
         }
         
         /**
