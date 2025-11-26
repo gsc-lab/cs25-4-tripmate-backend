@@ -5,6 +5,7 @@
 
     // User 라우트 등록
     return function (\AltoRouter $router, Request $request, Response $response): void {
+        $router->map('GET|OPTIONS', '/api/v1/places/autocomplete', [PlacesController::class, 'autocomplete']);
         //  장소 검색 라우터
         $router->map('GET', '/api/v1/places/external-search', [PlacesController::class, 'search']);
 
