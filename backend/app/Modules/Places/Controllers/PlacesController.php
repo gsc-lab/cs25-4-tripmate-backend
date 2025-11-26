@@ -28,6 +28,23 @@
                 exit();
             }
         }
+
+        /**
+         * auto 자동검색기능
+         * @return \Tripmate\Backend\Core\Response
+         */
+        public function autocomplete() {
+            $this->cors();
+
+            return $this->run(function() {
+                $query = $this->request->query();
+                $this->validator->validatePlace($query);
+
+                $result = $this->service->autoPlace($query["input"], $query["session_token"]);
+        
+                return $result;
+            });
+        }
         
         /**
          * 장소 검색 컨트롤러
