@@ -278,6 +278,13 @@
             // try-catch 예외 처리 함수 실행
             $this->runValidate($validation, $data);
         }
+
+        /** @param 쿼리 */
+        // 자동검색 기능 
+        public function validateAutoComplete(array $data) {
+            $validation = v::key('input', $this->vStringRule(), false)
+                        -> key('session_token', $this->vStringRule(), false);
+        }
     }
 
     
