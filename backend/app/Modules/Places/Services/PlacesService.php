@@ -20,6 +20,7 @@
         }
 
         // 외부 API 엔드포인트
+        private const API_AUTO = 'https://places.googleapis.com/v1/places:autocomplete';
         private const API_TEXT_SEARCH = "https://places.googleapis.com/v1/places:searchText";
         private const API_REVERS_GEOCODING = "https://maps.googleapis.com/maps/api/geocode/json";
         private const API_NEARBY = "https://places.googleapis.com/v1/places:searchNearby";
@@ -29,6 +30,37 @@
         private const MASK_SEARCH = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType";
         private const MASK_NEARBY = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType";
         private const MASK_PLACE_DETAILS = "place_id,name,formatted_address,geometry/location,types";
+
+        public function autoPlace($place, $session) {
+            $postData = [
+                'input' => $place,
+                'languageCode' => 'ko',
+                'sessionToken' => $session
+            ];
+
+            $result = GoogleApi::post(self::API_AUTO, $postData, []);
+
+            $suggestions = $result['suggestions'] ?? [];
+
+            $formattedSuggestions = [];
+            // 장소 ID, 이름, 주소만 반환
+            foreach ($suggestions as $item) {
+                $prediction = $item['placePrediction'];
+                $structure = $prediction['structuredFormat'] ?? [];
+
+            $formattedSuggestions[] = [
+                // 1. 장소 ID
+                'place_id' => $prediction['placeId'],
+                // 2. 장소/가게 이름
+                'name'     => $structure['mainText']['text'] 
+                              ?? $prediction['text']['text'],
+                // 3. 주소
+                'address'  => $structure['secondaryText']['text'] ?? '' 
+            ];
+        }
+
+        return $formattedSuggestions;
+        }
         
         /**
          * 외부 API를 불러와 장소 검색
