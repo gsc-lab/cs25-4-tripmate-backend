@@ -1,8 +1,21 @@
 <?php
 declare(strict_types=1);
 
+header("Access-Control-Allow-Origin: http://210.101.236.165:8080");
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Credentials: true");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200); // OK
+    exit;
+}
+
 // 0. autoload 로드
 require_once __DIR__ . '/../vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->load();
 
 // use 작성
 use Tripmate\Backend\Core\Request;
