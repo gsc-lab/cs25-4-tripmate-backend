@@ -7,7 +7,6 @@ use Tripmate\Backend\Core\DB;
 use Tripmate\Backend\Core\Repository;
 use Tripmate\Backend\Common\Exceptions\DbException;
 use PDO;
-use Throwable;
 
 // TripDaysRepository 클래스 정의
 class TripDaysRepository extends Repository{
@@ -408,7 +407,7 @@ class TripDaysRepository extends Repository{
 
     return $data;
 
-    } catch (Throwable $e) {
+    } catch (\Throwable $e) {
       throw new DbException("TRIPDAY_NOTE_ERROR", "메모 수정에 실패했습니다.", $e);
     }
   }
@@ -478,7 +477,7 @@ class TripDaysRepository extends Repository{
 
         return $result;
 
-    } catch (Throwable $e) {
+    } catch (\Throwable $e) {
         throw new DbException('NOT_TRIPDAT_REORDER', "날짜 재정렬에 실패하였습니다.", $e);
     }
   }
