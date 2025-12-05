@@ -149,7 +149,7 @@ class ScheduleItemsService extends Service{
         $this->verifyTripDayOwnership($userId, $tripId, $dayNo);
 
        // 4-2. 조회 후 삭제 후 제정렬 진행
-       if (!$this->scheduleItemsRepository->deleteScheduleDayById($itemId, $dayNo, $itemId)) {
+      if (!$this->scheduleItemsRepository->deleteScheduleDayById($tripId, $dayNo, $itemId)) {
           throw new DbException('SCHEDULE_ITEM_DELETE_FAILED', '일정 아이템 삭제에 실패했습니다.');
         }
 
@@ -194,7 +194,7 @@ public function reorderSingleScheduleItem(
         // 5-4. 재배치 수행 및 최신 목록 반환
         return $this->scheduleItemsRepository->reorderSingleScheduleItem(
           $scheduleItemId,
-           $newSeqNo,
+          $newSeqNo,
         );
       });
     } catch (DbException $e) {
