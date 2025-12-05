@@ -58,19 +58,22 @@ class ScheduleItemsController extends Controller
             // 1-5. 실패 시 에러 응답
             if ((int)$itemId <= 0) {
                 $this->response->error('ITEM_CREATION_FAILED', '일정 아이템 생성에 실패했습니다.', 500);
-                return null;
+                return false;
             }
 
             // 1-6. 성공 응답 (201 Created)
-            $this->response->created([
+            $responseData = [
                 'item_id'    => (int)$itemId,
                 'trip_id'    => (int)$tripId,
                 'day_no'     => (int)$dayNo,
                 'place_id'   => $placeId,
                 'visit_time' => $visitTime,
                 'memo'       => $memo,
-            ]);
-            return null;
+            ];
+
+            $this->response->created($responseData);
+
+            return $responseData;
         });
     }
 
@@ -95,12 +98,15 @@ class ScheduleItemsController extends Controller
             );
 
             // 2-4. 성공 응답
-            $this->response->success([
+            $responseData = [
                 'trip_id' => (int)$tripId,
                 'day_no'  => (int)$dayNo,
                 'items'   => $items,
-            ]);
-            return null;
+            ];
+
+            $this->response->success($responseData);
+
+            return $responseData;
         });
     }
 
@@ -118,7 +124,7 @@ class ScheduleItemsController extends Controller
             $this->validator->validateDayNo($dayNo);
             if ((int)$itemId <= 0) {
                 $this->response->error('INVALID_ITEM_ID', '유효하지 않은 item_id입니다.', 400);
-                return null;
+                return false;
             }
 
             // 3-3. 요청 바디
@@ -140,18 +146,21 @@ class ScheduleItemsController extends Controller
             // 3-5. 실패 시 에러 응답
             if ($updated === false) {
                 $this->response->error('ITEM_UPDATE_FAILED', '일정 아이템 수정에 실패했습니다.', 500);
-                return null;
+                return false;
             }
 
             // 3-6. 성공 응답
-            $this->response->success([
+            $responseData = [
                 'trip_id'    => (int)$tripId,
                 'day_no'     => (int)$dayNo,
                 'item_id'    => (int)$itemId,
                 'visit_time' => $updated['visit_time'] ?? $visitTime,
                 'memo'       => $updated['memo'] ?? $memo,
-            ]);
-            return null;
+            ];
+
+            $this->response->success($responseData);
+
+            return $responseData;
         });
     }
 
@@ -169,7 +178,7 @@ class ScheduleItemsController extends Controller
             $this->validator->validateDayNo($dayNo);
             if ((int)$itemId <= 0) {
                 $this->response->error('INVALID_ITEM_ID', '유효하지 않은 item_id입니다.', 400);
-                return null;
+                return false;
             }
 
             // 4-3. 서비스 호출
@@ -184,12 +193,13 @@ class ScheduleItemsController extends Controller
             // 4-4. 실패 시 에러 응답
             if (!$deleted) {
                 $this->response->error('DELETE_FAILED', '일정 삭제에 실패했습니다.', 500);
-                return null;
+                return false;
             }
 
             // 4-5. 성공 (204 No Content)
             $this->response->noContent();
-            return null;
+
+            return true;
         });
     }
 
@@ -212,12 +222,12 @@ class ScheduleItemsController extends Controller
 
             if ($itemId <= 0) {
                 $this->response->error('INVALID_ITEM_ID', 'item_id가 필요합니다.', 400);
-                return null;
+                return false;
             }
             // newSeqNo는 1 이상
             if ($newSeqNo < 1) {
                 $this->response->error('INVALID_SEQ_NO', 'new_seq_no는 1 이상의 정수여야 합니다.', 400);
-                return null;
+                return false;
             }
 
             // 5-4. 서비스 호출
@@ -233,16 +243,19 @@ class ScheduleItemsController extends Controller
             // 5-5. 실패 시 에러 응답
             if ($reordered === false) {
                 $this->response->error('REORDER_FAILED', '일정 아이템 재배치에 실패했습니다.', 500);
-                return null;
+                return false;
             }
 
             // 5-6. 성공 응답
-            $this->response->success([
+            $responseData = [
                 'trip_id' => (int)$tripId,
                 'day_no'  => (int)$dayNo,
                 'items'   => $reordered,
-            ]);
-            return null;
+            ];
+
+            $this->response->success($responseData);
+
+            return $responseData;
         });
     }
 }
