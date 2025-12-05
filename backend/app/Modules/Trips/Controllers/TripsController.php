@@ -1,6 +1,4 @@
 <?php
-declare(strict_types=1);
-
 namespace Tripmate\Backend\Modules\Trips\Controllers;
 
 use Tripmate\Backend\Core\Controller;
@@ -49,19 +47,22 @@ final class TripsController extends Controller
             // 1-5. 실패 처리
             if ($tripId <= 0) {
                 $this->response->error('CREATION_FAILED', '여행 생성에 실패했습니다.', 500);
-                return null; // run()에 "이미 응답 완료" 알림
+                return false;
             }
 
             // 1-6. 성공: 201 + Location 헤더
             $this->response->setHeader('Location', "/api/v1/trips/{$tripId}")
-                           ->created([
-                               'trip_id'    => (int) $tripId,
-                               'title'      => (string) $body['title'],
-                               'region_id'  => (int) $body['region_id'],
-                               'start_date' => (string) $body['start_date'],
-                               'end_date'   => (string) $body['end_date'],
-                           ]);
-            return null; // 이중 응답 방지
+                        ->created([
+                            'trip_id'    => (int) $tripId,
+                            'title'      => (string) $body['title'],
+                            'region_id'  => (int) $body['region_id'],
+                            'start_date' => (string) $body['start_date'],
+                            'end_date'   => (string) $body['end_date'],
+                        ]);
+
+            return [
+                'trip_id' => $tripId
+            ];
         });
     }
 
@@ -83,7 +84,7 @@ final class TripsController extends Controller
             // 2-3. 실패 처리
             if ($result === false) {
                 $this->response->error('RETRIEVAL_FAILED', '여행 목록 조회에 실패했습니다.', 500);
-                return null;
+                return false;
             }
 
             // 2-4. data/meta 분리 (스펙)
@@ -96,7 +97,11 @@ final class TripsController extends Controller
 
             // 2-5. 성공 응답
             $this->response->success($items, $meta);
-            return null;
+
+            return [
+                'items' => $items,
+                'meta'  => $meta
+            ];
         });
     }
 
@@ -111,7 +116,7 @@ final class TripsController extends Controller
             // 3-1. 경로 파라미터 검증
             if ($tripId <= 0) {
                 $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
-                return null;
+                return false;
             }
 
             // 3-2. 조회
@@ -120,12 +125,13 @@ final class TripsController extends Controller
             // 3-3. 없으면 404
             if (empty($trip)) {
                 $this->response->error('NOT_FOUND', '해당 여행을 찾을 수 없습니다.', 404);
-                return null;
+                return false;
             }
 
             // 3-4. 성공
             $this->response->success($trip);
-            return null;
+
+            return $trip;
         });
     }
 
@@ -140,14 +146,13 @@ final class TripsController extends Controller
             // 4-1. 경로 파라미터 검증
             if ($tripId <= 0) {
                 $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
-                return null;
+                return false;
             }
 
             // 4-2. 요청 바디
             $body = (array) $this->request->body();
 
             // 4-3. 유효성 검사 (전체 업데이트 기준)
-            // 부분 업데이트를 허용하려면 Validator에 validateTripUpdate 추가 후 분기
             $this->validator->validateTrip($body);
 
             // 4-4. 서비스 호출
@@ -163,18 +168,21 @@ final class TripsController extends Controller
             // 4-5. 실패
             if ($updated === false) {
                 $this->response->error('UPDATE_FAILED', '여행 수정에 실패했습니다.', 500);
-                return null;
+                return false;
             }
 
             // 4-6. 성공
-            $this->response->success([
+            $responseData = [
                 'trip_id'    => (int) $tripId,
                 'title'      => (string) $body['title'],
                 'region_id'  => (int) $body['region_id'],
                 'start_date' => (string) $body['start_date'],
                 'end_date'   => (string) $body['end_date'],
-            ]);
-            return null;
+            ];
+
+            $this->response->success($responseData);
+
+            return $responseData;
         });
     }
 
@@ -188,7 +196,7 @@ final class TripsController extends Controller
             // 5-1. 경로 파라미터 검증
             if ($tripId <= 0) {
                 $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
-                return null;
+                return false;
             }
 
             // 5-2. 삭제 실행
@@ -197,12 +205,13 @@ final class TripsController extends Controller
             // 5-3. 실패 처리
             if ($deleted === false) {
                 $this->response->error('DELETION_FAILED', '여행 삭제에 실패했습니다.', 500);
-                return null;
+                return false;
             }
 
             // 5-4. 성공: 204 No Content
             $this->response->noContent();
-            return null;
+
+            return true;
         });
     }
 }
