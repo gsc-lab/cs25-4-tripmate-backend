@@ -35,23 +35,63 @@
   <img src="https://private-user-images.githubusercontent.com/162419902/526323393-9e8a2c40-6b16-4b59-9fe3-cee26e3dfa94.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjU3MzgxOTYsIm5iZiI6MTc2NTczNzg5NiwicGF0aCI6Ii8xNjI0MTk5MDIvNTI2MzIzMzkzLTllOGEyYzQwLTZiMTYtNGI1OS05ZmUzLWNlZTI2ZTNkZmE5NC5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjE0JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIxNFQxODQ0NTZaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0xYjNiMjYyNGYyMDgyOWY1MWY2NzRkNGYxMzk5NDQ0MTFmNWMxNzFiZmE3MDhjZTQyMzhjNjA1ODgxNjQ3YTk3JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.-XwblEYy-Fh1kH4rt8ZCSDcaawsVnWtvMbn35bb50OI" width="800"/>
 </p>
 
-- Client → REST API 요청
-- Backend (Vanilla PHP + AltoRouter)
-- MySQL 기반 데이터 저장
+## Tech Stack & Skills
+
+### Frontend
+<div align="center">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"/>
+  <img src="https://img.shields.io/badge/MUI-007FFF?style=for-the-badge&logo=mui&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white"/>
+</div>
+
+- SPA 기반 UI 구성 (React)
+- REST API(JSON) 연동
+- 컴포넌트 단위 UI 설계
+
+### Backend
+<div align="center">
+  <img src="https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Laravel-EF3B2D?style=for-the-badge&logo=laravel&logoColor=white"/>
+  <img src="https://img.shields.io/badge/REST%20API-005571?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white"/>
+</div>
+
+- Vanilla PHP 기반 REST API 서버 구현
+- Laravel 프레임워크 활용한 구조화된 백엔드 설계
 - JWT 기반 인증 처리
 
 
-## Tech Stack
+### Database
+<div align="center">
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/>
+</div>
 
-**Backend**
-- PHP (Vanilla)
-- AltoRouter
-- JWT Authentication
-- MySQL (InnoDB)
+- 관계형 데이터 모델링
+- 트랜잭션 기반 순서 재배치 로직
+- Unique 제약 조건을 고려한 데이터 무결성 관리
 
-**Architecture**
-- REST API
-- JSON 기반 통신
+
+### Infrastructure & DevOps
+<div align="center">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white"/>
+</div>
+
+- Docker 컨테이너 기반 개발 환경 구성
+- Frontend / Backend / DB 분리 운영
+- REST API 통신 구조 설계
+
+
+### Collaboration & Tools
+<div align="center">
+  <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+  <img src="https://img.shields.io/badge/VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white"/>
+</div>
+
+- GitHub 기반 협업 및 버전 관리
+- PR 템플릿 활용한 코드 리뷰
+
 
 
 ## Core Features
@@ -117,3 +157,4 @@
 
 **Official Docs**
 - https://developers.google.com/maps/documentation/places/web-service/overview?hl=ko
+
