@@ -35,7 +35,7 @@ REST API 기반 백엔드 서버입니다.
 ## System Architecture
 
 <p align="center">
-  <img src="./docs/system-architecture.png" alt="System Architecture" width="800"/><br/>
+  <img src="[./docs/system-architecture.pn](https://github.com/gsc-lab/cs25-4-tripmate-backend/issues/120#issue-3727825025)" alt="System Architecture" width="800"/><br/>
   <sub>TripMate Backend System Architecture</sub>
 </p>
 
@@ -128,4 +128,5 @@ REST API 기반 백엔드 서버입니다.
 
 **공식 문서**
 - https://developers.google.com/maps/documentation/places/web-service/overview?hl
+
 
