@@ -1,31 +1,31 @@
 # TripMate Backend (Vanilla PHP)
 
-여행 일정(Trip / TripDay / ScheduleItem) 관리와 장소(Place) 저장·조회 기능을 제공하는  
-REST API 기반 백엔드 서버입니다.
+여행 일정(Trip / TripDay / ScheduleItem)과 장소(Place)를 관리하는  
+**REST API 기반 백엔드 서버**입니다.
 
 ---
 
-##  Members
+## Members
 
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.com/dgk99.png" width="100px;" alt="김민규"/><br />
-      <sub><b>김민규</b></sub><br />
-      팀장<br />
-      <a href="https://github.com/dgk99" target="_blank">@dgk99</a>
+      <img src="https://github.com/dgk99.png" width="100"/><br/>
+      <b>김민규</b><br/>
+      팀장<br/>
+      <a href="https://github.com/dgk99">@dgk99</a>
     </td>
     <td align="center">
-      <img src="https://github.com/jammmin02.png" width="100px;" alt="박정민"/><br />
-      <sub><b>박정민</b></sub><br />
-      팀원<br />
-      <a href="https://github.com/jammmin02" target="_blank">@jammmin02</a>
+      <img src="https://github.com/jammmin02.png" width="100"/><br/>
+      <b>박정민</b><br/>
+      팀원<br/>
+      <a href="https://github.com/jammmin02">@jammmin02</a>
     </td>
     <td align="center">
-      <img src="https://github.com/dayeon2423004.png" width="100px;" alt="김다연"/><br />
-      <sub><b>김다연</b></sub><br />
-      팀원<br />
-      <a href="https://github.com/dayeon2423004" target="_blank">@dayeon2423004</a>
+      <img src="https://github.com/dayeon2423004.png" width="100"/><br/>
+      <b>김다연</b><br/>
+      팀원<br/>
+      <a href="https://github.com/dayeon2423004">@dayeon2423004</a>
     </td>
   </tr>
 </table>
@@ -35,67 +35,63 @@ REST API 기반 백엔드 서버입니다.
 ## System Architecture
 
 <p align="center">
-  <img src="https://private-user-images.githubusercontent.com/162419902/526323393-9e8a2c40-6b16-4b59-9fe3-cee26e3dfa94.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjU3MzgxOTYsIm5iZiI6MTc2NTczNzg5NiwicGF0aCI6Ii8xNjI0MTk5MDIvNTI2MzIzMzkzLTllOGEyYzQwLTZiMTYtNGI1OS05ZmUzLWNlZTI2ZTNkZmE5NC5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjE0JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIxNFQxODQ0NTZaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0xYjNiMjYyNGYyMDgyOWY1MWY2NzRkNGYxMzk5NDQ0MTFmNWMxNzFiZmE3MDhjZTQyMzhjNjA1ODgxNjQ3YTk3JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.-XwblEYy-Fh1kH4rt8ZCSDcaawsVnWtvMbn35bb50OI" alt="System Architecture" width="800"/><br/>
-  <sub>TripMate Backend System Architecture</sub>
+  <img src="./docs/system-architecture.png" width="800"/>
 </p>
 
-
-**구성 흐름**
-
-- User → Frontend(Web)
-- Frontend → Backend API (Vanilla PHP)
-- Backend → MySQL
-- 외부 지도 API 결과 → Backend → DB(Place Upsert)
+- Client → REST API 요청
+- Backend (Vanilla PHP + AltoRouter)
+- MySQL 기반 데이터 저장
+- JWT 기반 인증 처리
 
 ---
 
 ## Tech Stack
 
-### Backend
+**Backend**
 - PHP (Vanilla)
-- AltoRouter (Routing)
-- JWT (Authentication)
+- AltoRouter
+- JWT Authentication
 - MySQL (InnoDB)
 
-### Infrastructure
-- REST API Architecture
+**Architecture**
+- REST API
 - JSON 기반 통신
 
 ---
 
-## Features
+## Core Features
 
-### 회원 관리
-- 회원가입 / 로그인(JWT 발급)
+### 1. 회원 관리
+- 회원가입 / 로그인 (JWT 발급)
 - 로그아웃
 - 내 정보 조회
 - 회원 탈퇴
 
-### 지역 관리
+### 2. 지역 관리
 - 국가 코드 기반 지역 조회
-- 지역 검색 기능
-- 향후 국가 확장 고려한 구조 설계
+- 지역 검색 지원
+- 국가 확장 고려한 구조 설계
 
-### 여행(Trip) 관리
+### 3. 여행(Trip) 관리
 - Trip 생성 / 조회 / 수정 / 삭제
-- TripDay 생성 / 조회 / 삭제
-- TripDay 재배치(day_no 재정렬)
+- TripDay 생성 / 삭제
+- TripDay 재배치 (day_no 재정렬)
 
-### 장소(Place) 관리
-- 외부 지도 API 검색 결과 저장(Upsert)
+### 4. 장소(Place) 관리
+- 외부 지도 API 검색 결과 저장 (Upsert)
 - 저장된 장소 조회
 
-### 일정(ScheduleItem) 관리
-- ScheduleItem 생성 / 조회 / 수정 / 삭제
-- 일정 아이템 순서 재배치(seq_no)
+### 5. 일정(ScheduleItem) 관리
+- 일정 생성 / 조회 / 수정 / 삭제
+- 일정 순서 재배치 (seq_no)
 - 다중 재배치 및 교차 이동 처리
 
 ---
 
-## Main API Endpoints
+##  Main API Endpoints
 
 | Domain | Method | Endpoint | Description |
-|---|---:|---|---|
+|------|--------|----------|-------------|
 | Auth | POST | /api/v1/auth/register | 회원가입 |
 | Auth | POST | /api/v1/auth/login | 로그인 |
 | Auth | POST | /api/v1/auth/logout | 로그아웃 |
@@ -112,25 +108,21 @@ REST API 기반 백엔드 서버입니다.
 
 ---
 
-### ScheduleItem 좌표 간 거리 계산
-- ScheduleItem 간 이동 거리 계산을 위해 위도(lat) / 경도(lng) 좌표 기반 거리 계산 로직 적용
-- Haversine(하버사인) 공식을 이용한 구면 거리 계산 방식 사용
-- 두 좌표 간 직선 거리 계산을 통해 이동 거리 추정값 산출
+## ScheduleItem 거리 계산
 
-**참고 자료**
+- 위도(lat) / 경도(lng) 기반 거리 계산
+- Haversine(하버사인) 공식 사용
+- 일정 간 이동 거리 추정값 산출
+
+**Reference**
 - https://link2me.tistory.com/1831
 
 ---
 
-### Place 외부 API (Google Maps Platform)
-- Google Maps Platform의 **Places API (Web Service)** 기준으로 장소 검색 및 상세 정보 구조 설계
-- 외부 API로부터 수집한 장소 정보를 내부 Place 테이블에 저장(Upsert)하여 활용
+## External API – Google Maps Platform
 
-**공식 문서**
-- https://developers.google.com/maps/documentation/places/web-service/overview?hl
+- Places API (Web Service) 기준으로 장소 정보 수집
+- 외부 장소 데이터를 내부 Place 테이블에 저장하여 재사용
 
-
-
-
-
-
+**Official Docs**
+- https://developers.google.com/maps/documentation/places/web-service/overview?hl=ko
