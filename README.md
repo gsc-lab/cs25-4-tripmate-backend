@@ -33,7 +33,11 @@ REST API 기반 백엔드 서버입니다.
 ---
 
 ## System Architecture
-<https://github.com/gsc-lab/cs25-4-tripmate-backend/issues/120#issue-3727825025>
+
+<p align="center">
+  <img src="./docs/system-architecture.png" alt="System Architecture" width="800"/><br/>
+  <sub>TripMate Backend System Architecture</sub>
+</p>
 
 
 **구성 흐름**
@@ -108,5 +112,20 @@ REST API 기반 백엔드 서버입니다.
 
 ---
 
-## 6. 
+### ScheduleItem 좌표 간 거리 계산
+- ScheduleItem 간 이동 거리 계산을 위해 위도(lat) / 경도(lng) 좌표 기반 거리 계산 로직 적용
+- Haversine(하버사인) 공식을 이용한 구면 거리 계산 방식 사용
+- 두 좌표 간 직선 거리 계산을 통해 이동 거리 추정값 산출
+
+**참고 자료**
+- https://link2me.tistory.com/1831
+
+---
+
+### Place 외부 API (Google Maps Platform)
+- Google Maps Platform의 **Places API (Web Service)** 기준으로 장소 검색 및 상세 정보 구조 설계
+- 외부 API로부터 수집한 장소 정보를 내부 Place 테이블에 저장(Upsert)하여 활용
+
+**공식 문서**
+- https://developers.google.com/maps/documentation/places/web-service/overview?hl
 
