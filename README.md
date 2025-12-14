@@ -3,8 +3,6 @@
 여행 일정(Trip / TripDay / ScheduleItem)과 장소(Place)를 관리하는  
 **REST API 기반 백엔드 서버**입니다.
 
----
-
 ## Members
 
 <table>
@@ -30,12 +28,11 @@
   </tr>
 </table>
 
----
 
 ## System Architecture
 
 <p align="center">
-  <img src="./docs/system-architecture.png" width="800"/>
+  <img src="https://private-user-images.githubusercontent.com/162419902/526323393-9e8a2c40-6b16-4b59-9fe3-cee26e3dfa94.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjU3MzgxOTYsIm5iZiI6MTc2NTczNzg5NiwicGF0aCI6Ii8xNjI0MTk5MDIvNTI2MzIzMzkzLTllOGEyYzQwLTZiMTYtNGI1OS05ZmUzLWNlZTI2ZTNkZmE5NC5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjE0JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIxNFQxODQ0NTZaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0xYjNiMjYyNGYyMDgyOWY1MWY2NzRkNGYxMzk5NDQ0MTFmNWMxNzFiZmE3MDhjZTQyMzhjNjA1ODgxNjQ3YTk3JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.-XwblEYy-Fh1kH4rt8ZCSDcaawsVnWtvMbn35bb50OI" width="800"/>
 </p>
 
 - Client → REST API 요청
@@ -43,7 +40,6 @@
 - MySQL 기반 데이터 저장
 - JWT 기반 인증 처리
 
----
 
 ## Tech Stack
 
@@ -57,7 +53,6 @@
 - REST API
 - JSON 기반 통신
 
----
 
 ## Core Features
 
@@ -86,7 +81,6 @@
 - 일정 순서 재배치 (seq_no)
 - 다중 재배치 및 교차 이동 처리
 
----
 
 ##  Main API Endpoints
 
@@ -106,8 +100,6 @@
 | Item | POST | /api/v1/trips/{trip_id}/days/{day_no}/items | 일정 생성 |
 | Item | PUT | /api/v1/trips/{trip_id}/days/{day_no}/items/reorder | 일정 재배치 |
 
----
-
 ## ScheduleItem 거리 계산
 
 - 위도(lat) / 경도(lng) 기반 거리 계산
@@ -117,7 +109,6 @@
 **Reference**
 - https://link2me.tistory.com/1831
 
----
 
 ## External API – Google Maps Platform
 
