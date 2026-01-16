@@ -1,152 +1,152 @@
 <?php
-    namespace Tripmate\Backend\Modules\Places\Controllers;
 
-    use Tripmate\Backend\Core\Controller;
-    use Tripmate\Backend\Core\Validator;
-    use Tripmate\Backend\Common\Middleware\AuthMiddleware as amw;
-    use Tripmate\Backend\Modules\Places\Services\PlacesService;
+namespace Tripmate\Backend\Modules\Places\Controllers;
 
-    class PlacesController extends Controller {
-        public Validator $validator;
-        public PlacesService $service;
+use Tripmate\Backend\Core\Controller;
+use Tripmate\Backend\Core\Request;
+use Tripmate\Backend\Core\Response;
+use Tripmate\Backend\Core\Validator;
+use Tripmate\Backend\Modules\Places\Services\PlacesService;
 
-        public function __construct($request, $response) {
-            parent::__construct($request, $response);
+class PlacesController extends Controller
+{
+    public Validator $validator;
+    public PlacesService $service;
 
-            $this->validator = new Validator();
-            $this->service = new PlacesService();
+    public function __construct(Request $request, Response $response)
+    {
+        parent::__construct($request, $response);
+
+        $this->validator = new Validator();
+        $this->service = new PlacesService();
+    }
+
+    // 임시 CORS
+    public function cors(): void
+    {
+        \header('Access-Control-Allow-Origin: *'); // 모든 출처(도메인, 포트) 허용
+        \header('Access-Control-Allow-Methods: GET, POST, OPTIONS'); // 요청 방식 허용
+        \header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { // 사전 요청 처리
+            \http_response_code(200);
+            exit();
         }
+    }
 
-        // 임시 CORS
-        public function cors() {
-            header("Access-Control-Allow-Origin: *"); // 모든 출처(도메인, 포트) 허용
-            header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // 요청 방식 허용
-            header("Access-Control-Allow-Headers: Content-Type, Authorization"); 
+    /**
+     * auto 자동검색기능
+     */
+    public function autocomplete(): Response
+    {
+        $this->cors();
 
-            if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { // 사전 요청 처리
-                http_response_code(200);
-                exit();
-            }
-        }
+        return $this->run(function (): array {
+            $query = $this->request->query();
+            $this->validator->validatePlace($query);
 
-        /**
-         * auto 자동검색기능
-         * @return \Tripmate\Backend\Core\Response
-         */
-        public function autocomplete() {
-            $this->cors();
+            return $this->service->autoPlace($query['input'], $query['session_token']);
+        });
+    }
 
-            return $this->run(function() {
-                $query = $this->request->query();
-                $this->validator->validatePlace($query);
+    /**
+     * 장소 검색 컨트롤러
+     * API를 호출하여 장소 검색 후 장소 반환
+     */
+    public function search(): Response
+    {
+        $this->cors();
 
-                $result = $this->service->autoPlace($query["input"], $query["session_token"]);
-        
-                return $result;
-            });
-        }
-        
-        /**
-         * 장소 검색 컨트롤러
-         * API를 호출하여 장소 검색 후 장소 반환
-         */
-        public function search() {
-            $this->cors();
+        return $this->run(function () {
+            $query = $this->request->query();
+            $this->validator->validatePlace($query);
 
-            return $this->run(function() {
-                $query = $this->request->query();
-                $this->validator->validatePlace($query);
+            $place = $query['place'] ?? null;
+            $token = $query['pageToken'] ?? null;
 
-                $place = $query['place'] ?? null;
-                $token = $query['pageToken'] ?? null;
+            return $this->service->searchByText($place, $token);
+        });
+    }
 
-                $result = $this->service->searchByText($place, $token);
-        
-                return $result;
-            });
-        }
+    /**
+     * Geocoding (좌표->주소) 변환 컨트롤러
+     */
+    public function reverseGeocoding(): Response
+    {
+        $this->cors();
 
-        /**
-         * Geocoding (좌표->주소) 변환 컨트롤러
-         */
-        public function reverseGeocoding() {
-            $this->cors();
+        return $this->run(function () {
+            $query = $this->request->query();
+            $this->validator->validatereverseGeocoding($query);
 
-            return $this->run(function() {
-                $query = $this->request->query();
-                $this->validator->validatereverseGeocoding($query);
+            $lat = $query['lat'];
+            $lng = $query['lng'];
 
-                $lat = $query['lat'];
-                $lng = $query['lng'];
+            return $this->service->getAddressFromCoordinates($lat, $lng);
+        });
+    }
 
-                $result = $this->service->getAddressFromCoordinates($lat, $lng);
-                
-                return $result;
-            });
-        }
+    /**
+     * 장소의 Id 받아 장소 반환 컨트롤러
+     */
+    public function placeGeocoding(): Response
+    {
+        $this->cors();
 
-        /**
-         * 장소의 Id 받아 장소 반환 컨트롤러
-         */
-        public function placeGeocoding() {
-            $this->cors();
+        return $this->run(function (): array {
+            $query = $this->request->query();
+            $this->validator->validatePlaceGeocoding($query);
 
-            return $this->run(function() {
-                $query = $this->request->query();
-                $this->validator->validatePlaceGeocoding($query);
+            $placeId = $query['place_id'];
 
-                $placeId = $query['place_id'];
+            return $this->service->getPlaceDetailsById($placeId);
+        });
+    }
 
-                $result = $this->service->getPlaceDetailsById($placeId);
-                
-                return $result;
-            });
-        }
+    /**
+     * 주변 지역 검색
+     */
+    public function searchNearby($lat, $lng): Response
+    {
+        $this->cors();
 
-        /**
-         * 주변 지역 검색
-         */
-        public function searchNearby($lat, $lng) {
-            $this->cors();
+        return $this->run(function () {
+            $query = $this->request->query();
+            $this->validator->validateReverseGeocoding($query);
 
-            return $this->run(function() {
-                $query = $this->request->query();
-                $this->validator->validateReverseGeocoding($query);
+            $lat = $query['lat'];
+            $lng = $query['lng'];
+            $radius = 1000; // 고정값
 
-                $lat = $query['lat'];
-                $lng = $query['lng'];
-                $radius = 1000; // 고정값
+            $result = $this->service->nearbyPlaces($lat, $lng, $radius);
 
-                $result = $this->service->nearbyPlaces($lat, $lng, $radius);
-                
-                return $result;
-            });
-        }
+            return $result;
+        });
+    }
 
-        /**
-         * 사용자가 선택한 외부 결과 중 하나 내부 저장
-         */
-        public function placeUpsert() {
-            return $this->run(function() {
-                $this->requireAuth();
+    /**
+     * 사용자가 선택한 외부 결과 중 하나 내부 저장
+     */
+    public function placeUpsert(): Response
+    {
+        return $this->run(function () {
+            $this->requireAuth();
 
-                $data = $this->request->body();
-                $this->validator->validatePlaceCategory($data);
-                    
-                $place = $this->service->upsert($data);
+            $data = $this->request->body();
+            $this->validator->validatePlaceCategory($data);
 
-                return $place;
-            });
-        }
+            return $this->service->upsert($data);
+        });
+    }
 
-        // 단건 조회
-        public function singlePlaceSearch() {
-            return $this->run(function() {
-                $placeId = $this->request->getAttribute('place_id');
-                $this->validator->validatePlaceId($placeId);
-                $result = $this->service->singlePlace($placeId);
-            
-                return $result;
-            });
-        }
-    } 
+    // 단건 조회
+    public function singlePlaceSearch(): Response
+    {
+        return $this->run(function () {
+            $placeId = $this->request->getAttribute('place_id');
+            $this->validator->validatePlaceId($placeId);
+
+            return $this->service->singlePlace($placeId);
+        });
+    }
+}

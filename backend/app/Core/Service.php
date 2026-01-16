@@ -1,23 +1,22 @@
 <?php
-// namespace 
+
+// namespace
+
 namespace Tripmate\Backend\Core;
 
 // use 작성
 use PDO;
+use Throwable;
 use Tripmate\Backend\Common\Exceptions\DbException;
 use Tripmate\Backend\Common\Exceptions\HttpException;
 
 // 모든 서비스의 공통 베이스 추상화 class
 // - 트랜잭션 처리
 abstract class Service
-{ 
-    // PDO 인스턴스
-    protected PDO $db;
-
+{
     // 생성자에서 PDO 주입
-    public function __construct(PDO $db)
+    public function __construct(protected PDO $pdo)
     {
-        $this->db = $db;
     }
 
     // 1. 트랜잭션 처리 메서드
@@ -29,26 +28,26 @@ abstract class Service
 
         try {
             // 1-2. 트랜잭션이 없으면 시작
-            if (!$this->db->inTransaction()) {
-                $this->db->beginTransaction();
+            if (!$this->pdo->inTransaction()) {
+                $this->pdo->beginTransaction();
                 $started = true;
             }
 
             // 1-3. 콜백 실행 (필요 시 $this->db 사용)
-            $result = $callback($this->db);
+            $result = $callback($this->pdo);
 
             // 1-4. 내가 시작한 트랜잭션만 커밋
-            if ($started && $this->db->inTransaction()) {
-                $this->db->commit();
+            if ($started && $this->pdo->inTransaction()) {
+                $this->pdo->commit();
             }
 
             // 1-5. 결과 반환
             return $result;
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // 1-6. 내가 시작한 트랜잭션만 롤백
-            if ($started && $this->db->inTransaction()) {
-                $this->db->rollBack();
+            if ($started && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
             }
 
             // 1-7. 이미 DbException이면 그대로 던짐

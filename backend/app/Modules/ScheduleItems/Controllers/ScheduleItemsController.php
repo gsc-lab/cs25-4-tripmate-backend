@@ -1,5 +1,7 @@
 <?php
+
 // namespace 작성
+
 namespace Tripmate\Backend\Modules\ScheduleItems\Controllers;
 
 // use 작성
@@ -10,7 +12,7 @@ use Tripmate\Backend\Core\Response;
 use Tripmate\Backend\Core\Validator;
 use Tripmate\Backend\Modules\ScheduleItems\Services\ScheduleItemsService;
 
-// ScheduleItemsController 작성 
+// ScheduleItemsController 작성
 class ScheduleItemsController extends Controller
 {
     // 프로퍼티 정의
@@ -27,7 +29,7 @@ class ScheduleItemsController extends Controller
     }
 
     // 1. 일정 아이템 생성 : POST /api/v1/trips/{trip_id}/days/{day_no}/items
-    public function createScheduleItem()
+    public function createScheduleItem(): void
     {
         $this->run(function () {
             // 1-1. 경로 파라미터
@@ -47,7 +49,7 @@ class ScheduleItemsController extends Controller
             // 1-4. 서비스 호출
             $userId = $this->getUserId(); // 인증 (공통 클래스 사용)
             $itemId = $this->service->createScheduleItem(
-                (int)$userId,
+                $userId,
                 (int)$tripId,
                 (int)$dayNo,
                 $placeId,
@@ -56,14 +58,14 @@ class ScheduleItemsController extends Controller
             );
 
             // 1-5. 실패 시 에러 응답
-            if ((int)$itemId <= 0) {
+            if ($itemId <= 0) {
                 $this->response->error('ITEM_CREATION_FAILED', '일정 아이템 생성에 실패했습니다.', 500);
                 return null;
             }
 
             // 1-6. 성공 응답 (201 Created)
             $this->response->created([
-                'item_id'    => (int)$itemId,
+                'item_id'    => $itemId,
                 'trip_id'    => (int)$tripId,
                 'day_no'     => (int)$dayNo,
                 'place_id'   => $placeId,
@@ -75,7 +77,7 @@ class ScheduleItemsController extends Controller
     }
 
     // 2. 일정 아이템 목록 조회 : GET /api/v1/trips/{trip_id}/days/{day_no}/items
-    public function getScheduleItems()
+    public function getScheduleItems(): void
     {
         $this->run(function () {
             // 2-1. 경로 파라미터
@@ -89,7 +91,7 @@ class ScheduleItemsController extends Controller
             // 2-3. 서비스 호출
             $userId = $this->getUserId();
             $items = $this->service->getScheduleItems(
-                (int)$userId,
+                $userId,
                 (int)$tripId,
                 (int)$dayNo
             );
@@ -105,7 +107,7 @@ class ScheduleItemsController extends Controller
     }
 
     // 3. 일정 아이템 수정 : PATCH /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
-    public function updateScheduleItem()
+    public function updateScheduleItem(): void
     {
         $this->run(function () {
             // 3-1. 경로 파라미터
@@ -129,7 +131,7 @@ class ScheduleItemsController extends Controller
             // 3-4. 서비스 호출
             $userId = $this->getUserId();
             $updated = $this->service->updateScheduleItem(
-                (int)$userId,
+                $userId,
                 (int)$tripId,
                 (int)$itemId,
                 (int)$dayNo,
@@ -156,7 +158,7 @@ class ScheduleItemsController extends Controller
     }
 
     // 4. 일정 아이템 삭제 : DELETE /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
-    public function deleteScheduleItem()
+    public function deleteScheduleItem(): void
     {
         $this->run(function () {
             // 4-1. 경로 파라미터
@@ -175,7 +177,7 @@ class ScheduleItemsController extends Controller
             // 4-3. 서비스 호출
             $userId = $this->getUserId();
             $deleted = $this->service->deleteScheduleItem(
-                (int)$userId,
+                $userId,
                 (int)$tripId,
                 (int)$dayNo,
                 (int)$itemId
@@ -194,7 +196,7 @@ class ScheduleItemsController extends Controller
     }
 
     // 5. 일정 아이템 순서 재배치 : POST /api/v1/trips/{trip_id}/days/{day_no}/items:reorder
-    public function reorderSingleScheduleItem()
+    public function reorderSingleScheduleItem(): void
     {
         $this->run(function () {
             // 5-1. 경로 파라미터
@@ -223,11 +225,11 @@ class ScheduleItemsController extends Controller
             // 5-4. 서비스 호출
             $userId = $this->getUserId();
             $reordered = $this->service->reorderSingleScheduleItem(
-                (int)$userId,
+                $userId,
                 (int)$tripId,
                 (int)$dayNo,
-                (int)$itemId,
-                (int)$newSeqNo
+                $itemId,
+                $newSeqNo
             );
 
             // 5-5. 실패 시 에러 응답

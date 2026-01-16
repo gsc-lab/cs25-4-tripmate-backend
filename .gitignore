@@ -50,4 +50,5 @@ coverage/
 # composer 관련 파일
 composer.lock
 vendor/
+var/
 .phpunit.result.cache

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tripmate\Backend\Modules\Trips\Controllers;
@@ -12,13 +13,13 @@ use Tripmate\Backend\Modules\Trips\Services\TripsService;
 
 final class TripsController extends Controller
 {
-    private TripsService $tripsService;
-    private Validator $validator;
+    private readonly TripsService $tripsService;
+    private readonly Validator $validator;
 
     public function __construct(Request $request, Response $response)
     {
         parent::__construct($request, $response);
-        
+
         $pdo = DB::conn();
         $this->tripsService = new TripsService($pdo);
         $this->validator = new Validator();
@@ -55,7 +56,7 @@ final class TripsController extends Controller
             // 1-6. 성공: 201 + Location 헤더
             $this->response->setHeader('Location', "/api/v1/trips/{$tripId}")
                            ->created([
-                               'trip_id'    => (int) $tripId,
+                               'trip_id'    => $tripId,
                                'title'      => (string) $body['title'],
                                'region_id'  => (int) $body['region_id'],
                                'start_date' => (string) $body['start_date'],
@@ -106,7 +107,7 @@ final class TripsController extends Controller
         $this->run(function () {
 
             $raw = $this->request->getAttribute('trip_id');
-            $tripId = (is_string($raw) && ctype_digit($raw)) ? (int)$raw : (int)$raw;
+            $tripId = (\is_string($raw) && \ctype_digit($raw)) ? (int)$raw : (int)$raw;
 
             // 3-1. 경로 파라미터 검증
             if ($tripId <= 0) {
@@ -115,10 +116,10 @@ final class TripsController extends Controller
             }
 
             // 3-2. 조회
-            $trip = $this->tripsService->findTripById((int) $tripId, $this->getUserId());
+            $trip = $this->tripsService->findTripById($tripId, $this->getUserId());
 
             // 3-3. 없으면 404
-            if (empty($trip)) {
+            if ($trip === []) {
                 $this->response->error('NOT_FOUND', '해당 여행을 찾을 수 없습니다.', 404);
                 return null;
             }
@@ -132,10 +133,10 @@ final class TripsController extends Controller
     // 4. Trip 수정 : PUT /api/v1/trips/{trip_id}
     public function updateTrip(): void
     {
-        $this->run(function ()  {
+        $this->run(function () {
 
             $raw = $this->request->getAttribute('trip_id');
-            $tripId = (is_string($raw) && ctype_digit($raw)) ? (int)$raw : (int)$raw;
+            $tripId = (\is_string($raw) && \ctype_digit($raw)) ? (int)$raw : (int)$raw;
 
             // 4-1. 경로 파라미터 검증
             if ($tripId <= 0) {
@@ -153,7 +154,7 @@ final class TripsController extends Controller
             // 4-4. 서비스 호출
             $updated = $this->tripsService->updateTrip(
                 $this->getUserId(),
-                (int) $tripId,
+                $tripId,
                 (int) $body['region_id'],
                 (string) $body['title'],
                 (string) $body['start_date'],
@@ -168,7 +169,7 @@ final class TripsController extends Controller
 
             // 4-6. 성공
             $this->response->success([
-                'trip_id'    => (int) $tripId,
+                'trip_id'    => $tripId,
                 'title'      => (string) $body['title'],
                 'region_id'  => (int) $body['region_id'],
                 'start_date' => (string) $body['start_date'],
@@ -181,10 +182,10 @@ final class TripsController extends Controller
     // 5. Trip 삭제 : DELETE /api/v1/trips/{trip_id}
     public function deleteTrip(): void
     {
-        $this->run(function ()  {
+        $this->run(function () {
             $raw = $this->request->getAttribute('trip_id');
-            $tripId = (is_string($raw) && ctype_digit($raw)) ? (int)$raw : (int)$raw;
-            
+            $tripId = (\is_string($raw) && \ctype_digit($raw)) ? (int)$raw : (int)$raw;
+
             // 5-1. 경로 파라미터 검증
             if ($tripId <= 0) {
                 $this->response->error('INVALID_TRIP_ID', '유효하지 않은 trip_id입니다.', 400);
@@ -192,7 +193,7 @@ final class TripsController extends Controller
             }
 
             // 5-2. 삭제 실행
-            $deleted = $this->tripsService->deleteTrip($this->getUserId(), (int) $tripId);
+            $deleted = $this->tripsService->deleteTrip($this->getUserId(), $tripId);
 
             // 5-3. 실패 처리
             if ($deleted === false) {

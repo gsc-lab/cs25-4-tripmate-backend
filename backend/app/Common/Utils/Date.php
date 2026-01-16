@@ -1,6 +1,10 @@
 <?php
+
 // namespace 작성
+
 namespace Tripmate\Backend\Common\Utils;
+
+use DateTimeImmutable;
 
 // Date 클래스 정의
 class Date
@@ -12,12 +16,16 @@ class Date
     public static function isValidDateYmd(string $ymd): bool
     {
         // 1-1. 공백 제거 및 빈 문자열이면 탈락
-        $ymd = trim($ymd);
-        if ($ymd === '' || strlen($ymd) !== 10) return false;
+        $ymd = \trim($ymd);
+        if ($ymd === '' || \strlen($ymd) !== 10) {
+            return false;
+        }
 
         // 1-2. 포맷에 맞는 DateTime 객체 생성 ('!'로 시간 초기화)
-        $dateTime = \DateTimeImmutable::createFromFormat('!' . self::FORMAT_YMD, $ymd);
-        if ($dateTime === false) return false;
+        $dateTime = DateTimeImmutable::createFromFormat('!' . self::FORMAT_YMD, $ymd);
+        if ($dateTime === false) {
+            return false;
+        }
 
         // 1-3. 포맷 일치 여부 최종 확인
         return $dateTime->format(self::FORMAT_YMD) === $ymd;
@@ -48,7 +56,9 @@ class Date
         }
 
         // 3-2. 시작일이 종료일보다 늦으면 잘못된 범위로 간주
-        if ($startYmd > $endYmd) return false;
+        if ($startYmd > $endYmd) {
+            return false;
+        }
 
         // 3-3. 날짜가 구간 내에 포함되는지 검사
         return $startYmd <= $ymd && $ymd <= $endYmd;
@@ -58,11 +68,13 @@ class Date
     public static function calcInclusiveDays(string $startYmd, string $endYmd): int
     {
         // 4-1. 두 날짜가 유효하고 순서가 올바른지 확인
-        if (!self::isBeforeOrEqual($startYmd, $endYmd)) return 0;
+        if (!self::isBeforeOrEqual($startYmd, $endYmd)) {
+            return 0;
+        }
 
         // 4-2. 날짜 객체로 변환 후 차이 계산
-        $startDate = new \DateTimeImmutable($startYmd);
-        $endDate   = new \DateTimeImmutable($endYmd);
+        $startDate = new DateTimeImmutable($startYmd);
+        $endDate   = new DateTimeImmutable($endYmd);
 
         // 4-3. 두 날짜의 차이(days) + 1 반환
         return $startDate->diff($endDate)->days + 1;
@@ -72,10 +84,12 @@ class Date
     public static function addDays(string $ymd, int $days): ?string
     {
         // 5-1. 입력된 날짜 형식 검증
-        if (!self::isValidDateYmd($ymd)) return null;
+        if (!self::isValidDateYmd($ymd)) {
+            return null;
+        }
 
         // 5-2. 기준일 객체 생성
-        $base = new \DateTimeImmutable($ymd);
+        $base = new DateTimeImmutable($ymd);
 
         // 5-3. 수정 문자열 생성 ('+3 days', '-2 days' 등)
         $expr = ($days >= 0 ? '+' : '') . $days . ' days';
@@ -88,7 +102,9 @@ class Date
     public static function getTripDayDate(string $startYmd, int $dayNo): ?string
     {
         // 6-1. dayNo가 1 미만이거나 시작일이 유효하지 않으면 null
-        if ($dayNo < 1 || !self::isValidDateYmd($startYmd)) return null;
+        if ($dayNo < 1 || !self::isValidDateYmd($startYmd)) {
+            return null;
+        }
 
         // 6-2. 시작일에 (dayNo - 1)일 더한 날짜 반환
         return self::addDays($startYmd, $dayNo - 1);
