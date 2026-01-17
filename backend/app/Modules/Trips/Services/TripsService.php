@@ -69,7 +69,6 @@ class TripsService extends Service
 
             // 1-6. 최종 생성된 tripId 반환
             return $tripId;
-
         } catch (DbException $e) {
             throw new HttpException(500, 'TRIP_CREATION_FAILED', '여행 생성에 실패했습니다.', $e);
         }
@@ -88,7 +87,6 @@ class TripsService extends Service
 
             // 2-2. 조회 성공 시 여행 정보 배열 반환
             return $trip;
-
         } catch (DbException $e) {
             throw new HttpException(500, 'TRIP_RETRIEVAL_FAILED', '여행 조회에 실패했습니다.', $e);
         }
@@ -110,7 +108,6 @@ class TripsService extends Service
                 $size,
                 $sort
             );
-
         } catch (DbException $e) {
             throw new HttpException(500, 'TRIPS_RETRIEVAL_FAILED', '여행 목록 조회에 실패했습니다.', $e);
         }
@@ -191,7 +188,6 @@ class TripsService extends Service
                 // 5-4. 모든 작업 성공 시 true 반환
                 return true;
             });
-
         } catch (DbException $e) {
             throw new HttpException(500, 'TRIP_DELETION_FAILED', '여행 삭제에 실패했습니다.', $e);
         }

@@ -3,9 +3,9 @@ FROM php:8.2-fpm
 
 # 시스템 패키지: unzip, git, libzip-dev 
 RUN apt-get update \
- && apt-get install -y git unzip libzip-dev \
- && docker-php-ext-install mysqli zip pdo pdo_mysql \
- && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends git unzip libzip-dev \
+  && docker-php-ext-install mysqli zip pdo pdo_mysql \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY . /var/www/html/
 
