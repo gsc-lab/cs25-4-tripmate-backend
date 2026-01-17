@@ -57,7 +57,7 @@ class PlacesController extends Controller
     {
         $this->cors();
 
-        return $this->run(function () {
+        return $this->run(function (): array {
             $query = $this->request->query();
             $this->validator->validatePlace($query);
 
@@ -110,7 +110,7 @@ class PlacesController extends Controller
     {
         $this->cors();
 
-        return $this->run(function () {
+        return $this->run(function (): array {
             $query = $this->request->query();
             $this->validator->validateReverseGeocoding($query);
 
@@ -142,7 +142,7 @@ class PlacesController extends Controller
     // 단건 조회
     public function singlePlaceSearch(): Response
     {
-        return $this->run(function () {
+        return $this->run(function (): ?array {
             $placeId = $this->request->getAttribute('place_id');
             $this->validator->validatePlaceId($placeId);
 

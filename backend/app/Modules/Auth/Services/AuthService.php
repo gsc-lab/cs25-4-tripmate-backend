@@ -67,7 +67,7 @@ class AuthService extends Service
     public function loginUser($data)
     {
         try {
-            return $this->transaction(function () use ($data) {
+            return $this->transaction(function () use ($data): string {
                 $email = $data['email'];
                 $password = $data['password'];
 
