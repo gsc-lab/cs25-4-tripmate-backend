@@ -53,6 +53,4 @@ class HttpException extends RuntimeException
     {
         return new self(500, 'INTERNAL_ERROR', $message);
     }
-
-
 }

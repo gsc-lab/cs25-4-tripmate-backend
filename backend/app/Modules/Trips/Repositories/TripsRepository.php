@@ -57,7 +57,6 @@ class TripsRepository extends Repository
                 throw new DbException('TRIP_INSERT_NO_ID', '여행 생성 후 ID 조회에 실패했습니다.');
             }
             return $id;
-
         } catch (Throwable $e) {
             \error_log('[TripsRepository::insertTrip][PDO] ' . $e->getMessage());
             throw new DbException('TRIP_INSERT_FAILED', '여행 생성 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -84,11 +83,9 @@ class TripsRepository extends Repository
               'trip_id' => $tripId,
               'user_id' => $userId,
             ]);
-
         } catch (Throwable $e) {
             throw new DbException('TRIP_FETCH_FAILED', '여행 조회 중 데이터베이스 오류가 발생했습니다.', $e);
         }
-
     }
 
     // 3. tripday 생성
@@ -113,7 +110,6 @@ class TripsRepository extends Repository
               'day_no' => $dayNo,
               'memo' => $memo,
             ]) > 0;
-
         } catch (Throwable $e) {
             throw new DbException('TRIPDAY_INSERT_FAILED', '여행일정 생성 중 데이터베이스 오류가 발생했습니다.', $e);
         }
@@ -192,7 +188,6 @@ class TripsRepository extends Repository
               'per_page' => $size,
               'total_pages' => (int)\ceil($total / $size),
             ];
-
         } catch (Throwable $e) {
             throw new DbException('TRIP_LIST_FETCH_FAILED', '여행 목록 조회 중 데이터베이스 오류가 발생했습니다.', $e);
         }
@@ -229,7 +224,6 @@ class TripsRepository extends Repository
               'trip_id' => $tripId,
               'user_id' => $userId,
             ]) > 0;
-
         } catch (Throwable $e) {
             throw new DbException('TRIP_UPDATE_FAILED', '여행 수정 중 데이터베이스 오류가 발생했습니다.', $e);
         }
@@ -251,7 +245,6 @@ class TripsRepository extends Repository
               'trip_id' => $tripId,
               'user_id' => $userId,
             ]) > 0;
-
         } catch (Throwable $e) {
             throw new DbException('TRIP_DELETE_FAILED', '여행 삭제 중 데이터베이스 오류가 발생했습니다.', $e);
         }
@@ -271,10 +264,8 @@ class TripsRepository extends Repository
             return $this->execute($sql, [
               'trip_id' => $tripId,
             ]) > 0;
-
         } catch (Throwable $e) {
             throw new DbException('TRIPDAY_DELETE_FAILED', '여행일정 삭제 중 데이터베이스 오류가 발생했습니다.', $e);
         }
     }
-
 }

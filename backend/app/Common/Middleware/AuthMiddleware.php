@@ -23,7 +23,6 @@ class AuthMiddleware
 
         // 에러가 없을 경우 JWT
         return $jwt;
-
     }
 
     // 검증 요청

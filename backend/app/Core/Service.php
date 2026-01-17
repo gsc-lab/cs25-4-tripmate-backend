@@ -43,7 +43,6 @@ abstract class Service
 
             // 1-5. 결과 반환
             return $result;
-
         } catch (Throwable $e) {
             // 1-6. 내가 시작한 트랜잭션만 롤백
             if ($started && $this->pdo->inTransaction()) {

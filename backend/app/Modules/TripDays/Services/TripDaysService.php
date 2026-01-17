@@ -77,7 +77,6 @@ class TripDaysService extends Service
                 throw new HttpException(404, 'TRIPDAY_NOT_FOUND', '해당하는 여행 일자를 찾을 수 없습니다.');
             }
             return $tripDay;
-
         } catch (DbException) {
             throw new HttpException(500, 'TRIPDAY_RETRIEVAL_FAILED', '여행 일자 조회에 실패했습니다.');
         }
@@ -109,7 +108,6 @@ class TripDaysService extends Service
         } catch (DbException) {
             throw new HttpException(500, 'TRIPDAY_DELETION_FAILED', '여행 일자 삭제에 실패했습니다.');
         }
-
     }
 
     // 8. 일차 목록 조회
@@ -121,7 +119,6 @@ class TripDaysService extends Service
         }
         try {
             return $this->tripDaysRepository->selectTripDays($tripId, $userId);
-
         } catch (DbException) {
             throw new HttpException(500, 'TRIPDAY_LIST_FAIL', '일차 목록 조회에 실패하였습니다.');
         }
@@ -141,7 +138,6 @@ class TripDaysService extends Service
                 throw new HttpException(404, 'MEMO_EDIT_ERROR', '메모 수정에 실패하였습니다.');
             }
             return $result;
-
         } catch (DbException) {
             throw new HttpException(500, 'TRIP_NOTE_EDIT_FAIL', '일차 메모 수정에 실패하였습니다.');
         }

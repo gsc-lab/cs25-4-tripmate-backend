@@ -42,7 +42,6 @@ class TripDaysRepository extends Repository
 
             // 1-3. 결과 반환
             return $result === 1;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::isTripOwner][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_OWNER_CHECK_FAILED', '트립 일차 소유자 확인 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -95,7 +94,6 @@ class TripDaysRepository extends Repository
 
             // 3-3. 결과 반환
             return $result === 1;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::existsDayNo][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_DAYNO_CHECK_FAILED', 'trip 일차 존재 여부 확인 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -119,7 +117,6 @@ class TripDaysRepository extends Repository
             return (int) $this->query($sql, [
               'trip_id' => $tripId
             ])->fetchColumn();
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::getMaxDayNo][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_MAX_DAYNO_FETCH_FAILED', 'trip 일차 최대값 조회 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -145,7 +142,6 @@ class TripDaysRepository extends Repository
               'trip_id' => $tripId,
               'day_no' => $addDay
             ]) >= 0;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::shiftDayNos][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_DAYNO_SHIFT_FAILED', 'trip 밀어내기 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -182,7 +178,6 @@ class TripDaysRepository extends Repository
                 throw new DbException('TRIPDAY_INSERT_FAILED', '트립 일차 생성에 실패했습니다.');
             }
             return $id;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::insertTripDay][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_INSERT_FAILED', '트립 일차 생성 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -241,7 +236,6 @@ class TripDaysRepository extends Repository
 
             // 8-7. 새로운 id 반환
             return $newId;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::createTripDay][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_CREATE_FAILED', 'trip day 생성 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -270,7 +264,6 @@ class TripDaysRepository extends Repository
               'trip_id' => $tripId,
               'day_no' => $dayNo,
             ]);
-
         } catch (Throwable $e) {
             throw new DbException('TRIPDAY_FETCH_FAILED', 'trip 조회 중 데이터베이스 오류가 발생했습니다.', $e);
         }
@@ -297,7 +290,6 @@ class TripDaysRepository extends Repository
 
             // 10-3. 결과 반환
             return $result === false ? null : (int)$result;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::getTripDayId][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_ID_FETCH_FAILED', 'trip_day_id 조회 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -318,7 +310,6 @@ class TripDaysRepository extends Repository
             return $this->execute($sql, [
               'trip_day_id' => $tripDayId
             ]) > 0;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::deleteTripDay][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_DELETE_FAILED', 'tripday 삭제 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -342,7 +333,6 @@ class TripDaysRepository extends Repository
               'trip_id' => $tripId,
               'day_no' => $deletedDayNo
             ]) >= 0;
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::reorderDayNos][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_DAYNO_REORDER_FAILED', 'trip 일차 재조정 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -367,7 +357,6 @@ class TripDaysRepository extends Repository
 
             // 13-3. day_no 재조정 및 반환
             return $this->reorderDayNos($tripId, $dayNo);
-
         } catch (Throwable $e) {
             \error_log('[TripDaysRepository::deleteTripDayById][PDO] ' . $e->getMessage());
             throw new DbException('TRIPDAY_DELETE_FAILED', 'trip 일차 삭제 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -388,7 +377,6 @@ class TripDaysRepository extends Repository
             // 값 반환
             $data = $this->fetchAll($sql, $param);
             return $data;
-
         } catch (Throwable $e) {
             throw new DbException('TRIPDAY_LIST_FAIL', '일차 목록 중 오류가 발생하였습니다.', $e);
         }
@@ -416,7 +404,6 @@ class TripDaysRepository extends Repository
             $selectParam = ['trip_id' => $tripId, 'day_no' => $dayNo];
 
             return $this->fetchOne($selectSql, $selectParam);
-
         } catch (Throwable $e) {
             throw new DbException('TRIPDAY_NOTE_ERROR', '메모 수정에 실패했습니다.', $e);
         }
@@ -486,7 +473,6 @@ class TripDaysRepository extends Repository
             $tripDaysParam = ['trip_id' => $tripId];
 
             return $this->fetchAll($tripDaysSql, $tripDaysParam);
-
         } catch (Throwable $e) {
             throw new DbException('NOT_TRIPDAT_REORDER', '날짜 재정렬에 실패하였습니다.', $e);
         }

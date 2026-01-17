@@ -36,7 +36,6 @@ class UsersService extends Service
 
                 return $result;
             });
-
         } catch (DbException $e) {
             throw new HttpException(500, 'NOT_USERPAGE_DATA', '페이지의 데이터를 불러오는데에 실패했습니다.', $e);
         }

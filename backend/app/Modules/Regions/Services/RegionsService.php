@@ -35,7 +35,6 @@ class RegionsService extends Service
                 }
 
                 return $result;
-
             });
         } catch (DbException $e) {
             throw new HttpException(500, 'REGION_FOUND_ERROR', '지역 조회에 실패하였습니다.', $e);

@@ -1,4 +1,5 @@
 <?php
+
 namespace Tripmate\Backend\Core;
 
 // use 작성
@@ -15,7 +16,6 @@ class DB
     {
         // 5-1. 없을 때 생성
         if (!self::$pdo instanceof PDO) {
-
             // 5-2. .env 값을 사용해 DB 접속 정보 설정
             $dsn =  \sprintf(
                 'mysql:host=%s;dbname=%s;charset=utf8mb4',
@@ -39,5 +39,4 @@ class DB
         // 5-5. 최종 반환
         return self::$pdo;
     }
-
 }

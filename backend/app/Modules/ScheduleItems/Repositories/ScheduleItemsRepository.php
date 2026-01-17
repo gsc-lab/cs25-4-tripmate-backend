@@ -39,7 +39,6 @@ class ScheduleItemsRepository extends Repository
 
             // 1-3. 존재 여부 반환
             return $row !== null;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::lockTripDay][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_LOCK_TRIPDAY_FAILED', 'tripday 확인을 실패하였습니다.', $e);
@@ -64,7 +63,6 @@ class ScheduleItemsRepository extends Repository
             // 2-3. 다음 seq_no 반환
             // - 존재하지 않을 경우 1 반환
             return (int)($row['next_seq_no'] ?? 1);
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::getNextSeqNo][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_GET_NEXT_SEQNO_FAILED', '다음 seq_no 계산을 실패하였습니다.', $e);
@@ -102,7 +100,6 @@ class ScheduleItemsRepository extends Repository
             }
 
             return $id;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::insertScheduleItem][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_INSERT_FAILED', '일정 아이템 생성 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -136,7 +133,6 @@ class ScheduleItemsRepository extends Repository
 
             // 4-4. 생성된 일정 아이템 ID 반환
             return $scheduleItemId;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::createScheduleItem][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_CREATE_FAILED', '일정 아이템 생성 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -171,7 +167,6 @@ class ScheduleItemsRepository extends Repository
             return $this->fetchAll($sql, [
               'trip_day_id' => $tripDayId
             ]);
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::getScheduleItemsByTripDayId][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_FETCH_FAILED', '일정 아이템 목록 조회 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -238,7 +233,6 @@ class ScheduleItemsRepository extends Repository
 
             // 6-6. 수정된 일정 아이템 배열 반환
             return $updatedItem;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::updateScheduleItem][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_UPDATE_FAILED', '일정 아이템 수정 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -260,7 +254,6 @@ class ScheduleItemsRepository extends Repository
             return $this->execute($sql, [
               'schedule_item_id' => $scheduleItemId
             ]) > 0;
-
         } catch (Throwable $e) {
             \error_log('[ScheduleItemsRepository::deleteScheduleItem][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_DELETE_FAILED', '일정 아이템 삭제 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -286,7 +279,6 @@ class ScheduleItemsRepository extends Repository
               'trip_day_id' => $tripDayId,
               'delete_seq_no' => $deleteSeqNo
             ]) >= 0;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::reorderSeqNosAfterDeletion][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_REORDER_SEQNO_FAILED', '일정 아이템 seq_no 재정렬 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -339,12 +331,10 @@ class ScheduleItemsRepository extends Repository
 
             // 9-7. 성공 시 true 반환
             return true;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::deleteScheduleDayById][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_DELETE_BY_DAYID_FAILED', '일정 아이템 삭제 중 데이터베이스 오류가 발생했습니다.', $e);
         }
-
     }
 
     // 10. 같은 tripday의 scheduleitem 잠금 메서드
@@ -365,7 +355,6 @@ class ScheduleItemsRepository extends Repository
 
             // 10-3. 성공 시 true 반환
             return true;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::lockScheduleItems][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_LOCK_FAILED', '일정 아이템 잠금 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -393,7 +382,6 @@ class ScheduleItemsRepository extends Repository
 
             // 11-4. 성공 시 trip_day_id 반환
             return (int)$row['trip_day_id'];
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::getTripDayIdByItemId][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_GET_TRIPDAYID_FAILED', '일정 아이템의 trip_day_id 조회 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -427,7 +415,6 @@ class ScheduleItemsRepository extends Repository
               'trip_day_id' => (int)$row['trip_day_id'],
               'seq_no' => (int)$row['seq_no']
             ];
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::lockTripIdAndSeqNoByItemId][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_LOCK_TRIPDAYID_SEQNO_FAILED', '일정 아이템의 trip_day_id, seq_no 잠금 조회 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -480,7 +467,6 @@ class ScheduleItemsRepository extends Repository
             // 13-2. 쿼리 실행 및 성공 여부 반환
             $this->execute($sql, $params);
             return true;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::shiftScheduleItemSeqNo][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_SHIFT_SEQNO_FAILED', '일정 아이템 seq_no 이동 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -505,7 +491,6 @@ class ScheduleItemsRepository extends Repository
             ]);
 
             return true;
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::updateItemSeqNo][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_UPDATE_SEQNO_FAILED', '일정 아이템 seq_no 업데이트 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -545,7 +530,6 @@ class ScheduleItemsRepository extends Repository
 
             // 15-7. 재배치된 일정아이템 목록 반환
             return $this->getScheduleItemsByTripDayId($tripDayId);
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::reorderSingleScheduleItem][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_REORDER_SINGLE_FAILED', '단일 일정 아이템 재배치 중 데이터베이스 오류가 발생했습니다.', $e);
@@ -570,12 +554,9 @@ class ScheduleItemsRepository extends Repository
 
             // 16-3. 최대 seq_no 반환 (없을 경우 0)
             return (int)($row['max_seq_no'] ?? 0);
-
         } catch (DbException $e) {
             \error_log('[ScheduleItemsRepository::getMaxSeqNo][PDO] ' . $e->getMessage());
             throw new DbException('SCHEDULE_ITEM_GET_MAX_SEQNO_FAILED', '최대 seq_no 조회 중 데이터베이스 오류가 발생했습니다.', $e);
         }
     }
-
-
 }

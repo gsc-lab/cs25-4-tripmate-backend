@@ -46,7 +46,6 @@ class Controller
             //      (스칼라는 result 키로 감싸 일관성 유지)
             $payload = \is_array($result) ? $result : ['result' => $result];
             return $this->response->success($payload);
-
         } catch (ValidationException $e) {
             // 5-5. ValidationException 예외 처리
             return $this->response->error(
@@ -55,7 +54,6 @@ class Controller
                 422,
                 $e->getDetails()
             );
-
         } catch (JwtException $e) {
             // 5-6. JwtException 예외 처리
             return $this->response->error(
@@ -63,7 +61,6 @@ class Controller
                 $e->getMessage(),
                 401
             );
-
         } catch (HttpException $e) {
             // 5-7. HttpExceptions 예외 처리
             return $this->response->error(
@@ -71,7 +68,6 @@ class Controller
                 $e->getMessage(),
                 $e->getStatus()
             );
-
         } catch (Throwable $e) {
             // 5-8. 알 수 없는 예외 처리 (500 에러)
             \error_log("[UNHANDLED] {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
@@ -129,5 +125,4 @@ class Controller
         'sort' => $sort
         ];
     }
-
 }

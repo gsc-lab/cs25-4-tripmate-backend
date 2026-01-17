@@ -161,7 +161,6 @@ class TripDaysController extends Controller
             $this->response->noContent();
             return null;
         });
-
     }
 
     // 8. trip day 순서 변경 : POST /api/v1/trips/{trip_id}/days:reorder

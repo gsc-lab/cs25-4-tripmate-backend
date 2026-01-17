@@ -77,13 +77,10 @@ class ScheduleItemsService extends Service
 
                 // 1-4. 생성된 scheduleItemId 반환
                 return $scheduleItemId;
-
             });
-
         } catch (DbException) {
             throw new HttpException(500, 'SCHEDULE_ITEM_CREATION_FAILED', '일정 아이템 생성에 실패했습니다.');
         }
-
     }
 
     // 2. 일정 목록 조회 메서드
@@ -98,11 +95,9 @@ class ScheduleItemsService extends Service
 
             //2-2. ScheduleItemsRepository의 getScheduleItemsByTripDayId 메서드 호출
             return $this->scheduleItemsRepository->getScheduleItemsByTripDayId($tripDayId);
-
         } catch (DbException) {
             throw new HttpException(500, 'SCHEDULE_ITEMS_RETRIEVAL_FAILED', '일정 아이템 조회에 실패했습니다.');
         }
-
     }
 
     // 3. 일정 아이템 부분 수정 메서드 (visit_time, memo)
@@ -135,7 +130,6 @@ class ScheduleItemsService extends Service
         } catch (DbException) {
             throw new HttpException(500, 'SCHEDULE_ITEM_UPDATE_FAILED', '일정 아이템 수정에 실패했습니다.');
         }
-
     }
 
     // 4. 일정 아이템 삭제 메서드

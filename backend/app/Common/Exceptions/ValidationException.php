@@ -63,7 +63,7 @@ class ValidationException extends Exception
         'page'         => 'PAGE_INVALID',
         'sort'         => 'SORT_INVALID',
         'country'      => 'COUNTRY_INVALID'
-    ];
+        ];
 
         $mapped = [];
 

@@ -52,7 +52,6 @@ class AuthService extends Service
                 $hashedPassword = Password::hash($password);
                 return $this->userRepository->createUser($normalizedEmail, $hashedPassword, $nickname);
             });
-
         } catch (DbException $e) {
             throw new HttpException(500, 'UNEXPECTED_ERROR', '회원가입 중 알 수 없는 에러가 발생하였습니다.', $e);
         }

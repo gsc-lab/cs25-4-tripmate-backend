@@ -156,7 +156,7 @@ class PlacesService extends Service
                 ],
                 'radius' => $radius
             ]
-        ]
+            ]
         ];
 
         // 함수 실행
@@ -226,7 +226,6 @@ class PlacesService extends Service
             $result = $this->placesRepository->placeRepository($placeId);
 
             return $result;
-
         } catch (DbException) {
             throw new HTTPException(500, 'PLACE_NOT', '장소를 찾던 도중 실패했습니다.');
         }
