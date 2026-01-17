@@ -28,7 +28,7 @@ final class TripsController extends Controller
     // 1. Trip 생성 : POST /api/v1/trips
     public function createTrip(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 1-1. 요청 바디
             $body = (array) $this->request->body();
 
@@ -69,7 +69,7 @@ final class TripsController extends Controller
     // 2. Trip 목록 : GET /api/v1/trips?page&size&sort
     public function getTrips(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 2-1. 페이징 파싱
             ['page' => $page, 'size' => $size, 'sort' => $sort] = $this->parsePaging();
 
@@ -104,7 +104,7 @@ final class TripsController extends Controller
     // 3. Trip 단건 : GET /api/v1/trips/{trip_id}
     public function showTrip(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
 
             $raw = $this->request->getAttribute('trip_id');
             $tripId = (\is_string($raw) && \ctype_digit($raw)) ? (int)$raw : (int)$raw;
@@ -133,7 +133,7 @@ final class TripsController extends Controller
     // 4. Trip 수정 : PUT /api/v1/trips/{trip_id}
     public function updateTrip(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
 
             $raw = $this->request->getAttribute('trip_id');
             $tripId = (\is_string($raw) && \ctype_digit($raw)) ? (int)$raw : (int)$raw;
@@ -182,7 +182,7 @@ final class TripsController extends Controller
     // 5. Trip 삭제 : DELETE /api/v1/trips/{trip_id}
     public function deleteTrip(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             $raw = $this->request->getAttribute('trip_id');
             $tripId = (\is_string($raw) && \ctype_digit($raw)) ? (int)$raw : (int)$raw;
 

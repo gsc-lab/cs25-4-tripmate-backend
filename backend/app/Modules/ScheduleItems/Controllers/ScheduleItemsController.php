@@ -31,7 +31,7 @@ class ScheduleItemsController extends Controller
     // 1. 일정 아이템 생성 : POST /api/v1/trips/{trip_id}/days/{day_no}/items
     public function createScheduleItem(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 1-1. 경로 파라미터
             $tripId = $this->request->getAttribute('trip_id');
             $dayNo  = $this->request->getAttribute('day_no');
@@ -79,7 +79,7 @@ class ScheduleItemsController extends Controller
     // 2. 일정 아이템 목록 조회 : GET /api/v1/trips/{trip_id}/days/{day_no}/items
     public function getScheduleItems(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 2-1. 경로 파라미터
             $tripId = $this->request->getAttribute('trip_id');
             $dayNo  = $this->request->getAttribute('day_no');
@@ -109,7 +109,7 @@ class ScheduleItemsController extends Controller
     // 3. 일정 아이템 수정 : PATCH /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
     public function updateScheduleItem(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 3-1. 경로 파라미터
             $tripId = $this->request->getAttribute('trip_id');
             $dayNo  = $this->request->getAttribute('day_no');
@@ -160,7 +160,7 @@ class ScheduleItemsController extends Controller
     // 4. 일정 아이템 삭제 : DELETE /api/v1/trips/{trip_id}/days/{day_no}/items/{item_id}
     public function deleteScheduleItem(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 4-1. 경로 파라미터
             $tripId = $this->request->getAttribute('trip_id');
             $dayNo  = $this->request->getAttribute('day_no');
@@ -198,7 +198,7 @@ class ScheduleItemsController extends Controller
     // 5. 일정 아이템 순서 재배치 : POST /api/v1/trips/{trip_id}/days/{day_no}/items:reorder
     public function reorderSingleScheduleItem(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 5-1. 경로 파라미터
             $tripId = $this->request->getAttribute('trip_id');
             $dayNo  = $this->request->getAttribute('day_no');

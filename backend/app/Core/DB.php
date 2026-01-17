@@ -1,14 +1,8 @@
 <?php
-
-// namespace App\Core;
-// 1. namespace 작성
-
 namespace Tripmate\Backend\Core;
 
-// 2. use 작성
+// use 작성
 use PDO;
-
-// 예외 처리 클래스 추가
 
 // 3. DB 연결 관리를 위한 클래스 작성
 class DB

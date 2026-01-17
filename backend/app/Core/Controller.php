@@ -15,8 +15,6 @@ use Tripmate\Backend\Common\Middleware\AuthMiddleware;
 // 3. 공통 컨트롤러 클래스
 class Controller
 {
-    // protected ?Validator $validator = null; // 유효성 검증 도구
-
     // 4. 생성자 (request, response 초기화)
     public function __construct(protected Request $request, protected Response $response)
     {
@@ -126,9 +124,9 @@ class Controller
 
         // 8-4. 결과 반환
         return [
-          'page' => $page,
-          'size' => $size,
-          'sort' => $sort
+        'page' => $page,
+        'size' => $size,
+        'sort' => $sort
         ];
     }
 

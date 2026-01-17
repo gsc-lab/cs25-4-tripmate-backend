@@ -32,7 +32,7 @@ class TripDaysController extends Controller
     // POST /api/v1/trips/{trip_id}/days
     public function createTripDay(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 1-1. 경로 파라미터
             $tripId =  $this->request->getAttribute('trip_id');
 
@@ -72,7 +72,7 @@ class TripDaysController extends Controller
     public function showTripDay(): void
     {
 
-        $this->run(function () {
+        $this->run(function (): null {
             // 4-1. 경로 파라미터
             $tripId =  $this->request->getAttribute('trip_id');
             $dayNo  =  $this->request->getAttribute('day_no');
@@ -138,7 +138,7 @@ class TripDaysController extends Controller
     // 7-1. deleteTripDay 메서드 정의
     public function deleteTripDay(): void
     {
-        $this->run(function () {
+        $this->run(function (): null {
             // 7-1. 경로 파라미터
             $tripId =  $this->request->getAttribute('trip_id');
             $dayNo  =  $this->request->getAttribute('day_no');
